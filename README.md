@@ -1,6 +1,6 @@
 # Kids Daily ⭐
 
-A simple daily points app for Dior, Diane and Dylan. It is a single `index.html` file with no build step.
+A simple daily points app for Diyar, Dayan and Dilan. It is a single `index.html` file with no build step.
 
 **Open it:** https://bornaxahadi.github.io/kids-daily/
 

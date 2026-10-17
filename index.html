@@ -313,7 +313,7 @@ button:focus{transform:scale(1.04);z-index:2;position:relative}
 @keyframes bit{from{transform:translate(0,0) scale(1);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(.4);opacity:0}}
 .stage .say{position:absolute;z-index:5;transform:translateX(-50%);font:900 24px var(--display,inherit);color:#fff;text-shadow:0 2px 0 #1d2433,0 0 8px #1d2433;pointer-events:none;animation:say 1s ease-out forwards;white-space:nowrap}
 @keyframes say{from{transform:translate(-50%,0) scale(.6);opacity:1}to{transform:translate(-50%,-34px) scale(1.15);opacity:0}}
-.stage .gscore{position:absolute;left:8px;top:6px;z-index:5;font:900 20px var(--display,inherit);background:rgba(255,255,255,.9);border:2px solid var(--edge,#1d2433);border-radius:999px;padding:1px 10px;pointer-events:none}
+.stage .gscore{position:absolute;left:8px;top:6px;z-index:5;font:900 15px var(--display,inherit);color:#1d2433;background:rgba(255,255,255,.95);border:2px solid var(--edge,#1d2433);border-radius:999px;padding:1px 10px;pointer-events:none}
 .stage .gscore.pulse{animation:wob .4s}
 /* game v2 */
 .stage .grave{position:absolute;bottom:26px;z-index:2;font-size:clamp(26px,6vw,40px);font-style:normal;opacity:0;transition:opacity 2s;pointer-events:none;filter:drop-shadow(0 0 6px #6b5bd6)}
@@ -596,6 +596,8 @@ function trendSVG(kid,days,color){
 
 // ---- actions ----
 let lastAdd=null;
+// most times one activity can be tapped per girl per day (Dad's PIN mode has no limit)
+const maxTaps=a=>a.max||(a.once?1:(a.id==='reading'||a.id==='outside'?5:3));
 function addAct(kid,act){
   const day=structuredClone(getDay(kid,viewDate));
   const before=projected(day);
@@ -956,7 +958,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.range){range=b.dataset.range;render();return}
   if(b.dataset.kid){view={screen:"kid",kid:b.dataset.kid};render();scrollTo(0,0);return}
   if(b.dataset.go){view={screen:b.dataset.go,kid:null};pinTry="";render();scrollTo(0,0);return}
-  if(b.dataset.act){const a=ALL.find(x=>x.id===b.dataset.act);if(a.once&&getDay(view.kid,viewDate).log.some(x=>x.a===a.id)) return;if(!isToday()&&!parentOn()) return;if(a.parent&&!parentOn()) return;addAct(view.kid,a);const nb=document.querySelector(`[data-act="${a.id}"]`);nb&&nb.classList.add("pop");return}
+  if(b.dataset.act){const a=ALL.find(x=>x.id===b.dataset.act);if(a.once&&getDay(view.kid,viewDate).log.some(x=>x.a===a.id)) return;if(!isToday()&&!parentOn()) return;if(!parentOn()&&getDay(view.kid,viewDate).log.filter(x=>x.a===a.id).length>=maxTaps(a)){sfx("deny");showToast("That's the max for today! ("+maxTaps(a)+" times)");return}if(a.parent&&!parentOn()) return;addAct(view.kid,a);const nb=document.querySelector(`[data-act="${a.id}"]`);nb&&nb.classList.add("pop");return}
   if(b.dataset.del){removeEntry(view.kid,b.dataset.del);return}
   if(b.id==="goBtn"){const d=getDay(view.kid,today());d.runStart?stopPlay(view.kid):startPlay(view.kid);return}
   if(b.id==="pinOk"){const v=$("#pinIn").value;if(pinOk(v)){parentUntil=Date.now()+600000;pinTry="";render()}else{$("#pinMsg").textContent="Wrong PIN. Try again.";$("#pinIn").value=""}return}
@@ -1066,7 +1068,7 @@ director();
   const S={n:0,lvl:1,night:false,pt:0,acc:0,lit:0,lastTap:0,team:[],cd:{},busy:{},wander:3,strike:7};
   const M={on:LS("kd:music")!=="0",started:false,step:0,next:0};
   const E=[],UN={3:"🐦 Birds & bees · 🕷️ Spiders at night",4:"🪙 Gold coins · 🎃 Pumpkin rain",5:"🎈 Balloons · 💀 Skulls",2:"🍎 Apples fall! · 🦇 Bats · 🧟 Graveyard wakes up",6:"More zombies & 💀 skeletons chase!",7:"🦄 Rare unicorn!",8:"Super fast!",9:"Zombies run faster!",10:"Zombie horde! 🧟🧟",11:"Skeleton army! 💀💀",12:"MAX LEVEL 🏆"};
-  stageEl.insertAdjacentHTML("afterbegin",'<div class="dark"></div><i class="grave" style="left:9%">🪦</i><i class="grave" style="left:34%">🪦</i><i class="grave" style="left:60%">🪦</i><i class="grave" style="left:86%">⚰️</i><div class="moon">🌙</div><div class="flash"></div><svg class="bolt" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="" fill="none" stroke="#fff" stroke-width="4" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg><div class="gscore">⭐ <b class="sc">0</b> · Lv <b class="lv">1</b><span class="gb"><i></i></span></div><button class="gmusic" type="button" aria-label="Music"></button><div class="gbanner"></div>');
+  stageEl.insertAdjacentHTML("afterbegin",'<div class="dark"></div><i class="grave" style="left:9%">🪦</i><i class="grave" style="left:34%">🪦</i><i class="grave" style="left:60%">🪦</i><i class="grave" style="left:86%">⚰️</i><div class="moon">🌙</div><div class="flash"></div><svg class="bolt" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points="" fill="none" stroke="#fff" stroke-width="4" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg><div class="gscore">🎮 Game ⭐ <b class="sc">0</b> · Lv <b class="lv">1</b><span class="gb"><i></i></span></div><button class="gmusic" type="button" aria-label="Music"></button><div class="gbanner"></div>');
   const $=s=>stageEl.querySelector(s),hud=$(".gscore"),mbtn=$(".gmusic"),ban=$(".gbanner"),bolt=$(".bolt polyline"),boltEl=$(".bolt"),flashEl=$(".flash");
   let W=300,H=300;
   const vis=()=>stageEl.offsetParent&&!document.hidden;

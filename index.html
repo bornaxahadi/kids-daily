@@ -1,0 +1,560 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Kids Daily</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Layout: home = three big kid cards; kid page = score band, good/bad tile grids, Roblox timer panel. */
+:root{
+  --bg:#f3f6fb; --surface:#ffffff; --ink:#1d2433; --muted:#5f6b80; --line:#dde3ee;
+  --good:#1f9d63; --good-soft:#e2f6ec; --bad:#d9443a; --bad-soft:#fde6e3;
+  --gold:#f2a516; --gold-soft:#fff2d6;
+  --dior:#e2508f; --diane:#7a5ce6; --dylan:#1a9bd7;
+  --display:"Fredoka","Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito","Segoe UI",system-ui,sans-serif;
+  --r:22px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141824; --surface:#1e2433; --ink:#eef1f7; --muted:#a3adc2; --line:#2e3547;
+  --good:#3cc584; --good-soft:#173628; --bad:#ff6b5e; --bad-soft:#3b1f1d;
+  --gold:#ffbf3c; --gold-soft:#3a2f14;
+  --dior:#ff6fab; --diane:#9d85ff; --dylan:#3fb8f0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141824; --surface:#1e2433; --ink:#eef1f7; --muted:#a3adc2; --line:#2e3547;
+  --good:#3cc584; --good-soft:#173628; --bad:#ff6b5e; --bad-soft:#3b1f1d;
+  --gold:#ffbf3c; --gold-soft:#3a2f14;
+  --dior:#ff6fab; --diane:#9d85ff; --dylan:#3fb8f0; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:16px 40px;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible{outline:3px solid var(--diane);outline-offset:3px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.top h1{font-size:clamp(30px,5vw,44px)}
+.date{color:var(--muted);font-weight:700}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;font-weight:800;font-size:15px}
+.pill.special{background:var(--gold-soft);color:var(--ink)}
+.small-btn{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:10px 16px;font-weight:800;font-size:16px}
+
+/* Home */
+.kids{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.kid-card{background:var(--surface);border-radius:var(--r);padding:22px;text-align:left;display:flex;flex-direction:column;gap:14px;
+  border:3px solid transparent;box-shadow:0 6px 0 var(--kc);transition:transform .12s}
+.kid-card:active{transform:translateY(4px);box-shadow:0 2px 0 var(--kc)}
+.kid-card .face{width:72px;height:72px;border-radius:50%;background:var(--kc);color:#fff;display:grid;place-items:center;font-family:var(--display);font-size:38px;font-weight:700}
+.kid-card .row{display:flex;align-items:center;gap:14px}
+.kid-card h2{font-size:34px;color:var(--kc)}
+.meter{height:18px;border-radius:999px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--kc);border-radius:999px;transition:width .3s}
+.stat{display:flex;justify-content:space-between;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.stat b{color:var(--ink)}
+.prize{background:var(--gold-soft);border-radius:14px;padding:10px 12px;font-weight:800;display:flex;align-items:center;gap:8px}
+
+/* Kid page */
+.kid-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.back{width:64px;height:64px;border-radius:50%;background:var(--surface);font-size:30px;border:2px solid var(--line);flex:none}
+.kid-head h1{font-size:clamp(34px,6vw,52px);color:var(--kc)}
+.score{background:var(--surface);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:12px}
+.score .big{font-family:var(--display);font-size:56px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.score .big small{font-size:24px;color:var(--muted)}
+.score .meter{height:26px}
+.score .msg{font-weight:800;font-size:20px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.panel{background:var(--surface);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel h3{font-size:24px;display:flex;align-items:center;gap:8px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.tile{border-radius:18px;padding:14px 10px;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;font-weight:800;font-size:17px;line-height:1.15}
+.tile .e{font-size:40px;line-height:1}
+.tile .p{font-family:var(--display);font-size:20px}
+.tile.good{background:var(--good-soft);border:3px solid var(--good)}
+.tile.good .p{color:var(--good)}
+.tile.bad{background:var(--bad-soft);border:3px solid var(--bad)}
+.tile.bad .p{color:var(--bad)}
+.tile.done{opacity:.55;cursor:default}
+.tile:active{transform:scale(.96)}
+.tile.pop{animation:pop .35s}
+@keyframes pop{50%{transform:scale(1.08)}}
+
+.roblox{display:flex;flex-direction:column;gap:14px}
+.clock{font-family:var(--display);font-size:64px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.clock-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.clock-sub{color:var(--muted);font-weight:800}
+.go{width:100%;min-height:96px;border-radius:20px;font-family:var(--display);font-size:32px;font-weight:700;color:#fff;background:var(--good)}
+.go.stop{background:var(--bad)}
+.go:disabled{background:var(--line);color:var(--muted);cursor:not-allowed}
+.alert{border-radius:14px;padding:12px 14px;font-weight:800}
+.alert.warn{background:var(--gold-soft)}
+.alert.over{background:var(--bad-soft);color:var(--bad)}
+
+.log{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow:auto}
+.log-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--bg);font-weight:700}
+.log-item .t{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums;min-width:52px}
+.log-item .l{flex:1;min-width:0}
+.log-item .p{font-family:var(--display);font-weight:700}
+.log-item .p.g{color:var(--good)} .log-item .p.b{color:var(--bad)}
+.x{background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:6px 10px;font-weight:800;font-size:14px}
+.empty{color:var(--muted);font-weight:700}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);
+  padding:14px 20px;border-radius:16px;font-weight:800;display:flex;gap:12px;align-items:center;z-index:20;max-width:calc(100% - 32px)}
+.toast button{background:var(--bg);color:var(--ink);border-radius:10px;padding:8px 12px;font-weight:800}
+
+/* Parent */
+.parent{background:var(--surface);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:16px}
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-weight:800}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:52px;height:52px;border-radius:14px;background:var(--bg);font-size:26px;font-weight:800;border:2px solid var(--line)}
+.stepper span{min-width:70px;text-align:center;font-family:var(--display);font-size:26px;font-variant-numeric:tabular-nums}
+.toggle{min-width:120px;padding:14px 18px;border-radius:14px;font-weight:800;background:var(--bg);border:2px solid var(--line)}
+.toggle.on{background:var(--gold);border-color:var(--gold);color:#1d2433}
+.pin{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pin input{font:inherit;font-size:28px;letter-spacing:.3em;width:160px;padding:10px 14px;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink);text-align:center}
+.hint{color:var(--muted);font-weight:700;font-size:15px}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:14px;font-weight:700}
+.pm{display:flex;gap:10px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;font-family:var(--display);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
+.chip.g{background:var(--good-soft);color:var(--good)} .chip.b{background:var(--bad-soft);color:var(--bad)}
+.score .chip{font-size:26px;padding:8px 18px}
+.stars{font-size:28px;letter-spacing:2px;min-height:34px}
+.fx{position:fixed;inset:0;pointer-events:none;z-index:30;overflow:hidden}
+.float{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-family:var(--display);font-weight:700;font-size:120px;animation:rise 1.1s ease-out forwards;text-shadow:0 4px 0 rgba(0,0,0,.12)}
+.float.g{color:var(--good)} .float.b{color:var(--bad)}
+@keyframes rise{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-140%) scale(1)}}
+.bit{position:absolute;font-size:36px;animation:burst 1.2s ease-out forwards}
+@keyframes burst{0%{opacity:1;transform:translate(0,0) scale(.6)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.2) rotate(var(--rot))}}
+.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+.party{position:fixed;inset:0;z-index:25;display:grid;place-items:center;background:rgba(0,0,0,.35);padding:16px}
+.party div{background:var(--surface);border-radius:28px;padding:32px 28px;text-align:center;max-width:520px;display:flex;flex-direction:column;gap:12px;animation:pop .5s}
+.party h2{font-size:44px;color:var(--gold)}
+.party p{font-size:22px;font-weight:800;margin:0}
+.party button{background:var(--good);color:#fff;border-radius:16px;padding:16px;font-family:var(--display);font-size:26px;font-weight:700}
+.awards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.award{background:var(--gold-soft);border-radius:var(--r);padding:16px 18px;display:flex;align-items:center;gap:14px}
+.award .medal{font-size:46px;line-height:1}
+.award h3{font-size:22px}
+.award .who{font-family:var(--display);font-size:26px;font-weight:700}
+.award .hint{font-size:14px}
+.tabs{display:flex;gap:10px}
+.tabs button{padding:12px 22px;border-radius:14px;font-weight:800;background:var(--surface);border:2px solid var(--line)}
+.tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.trend{background:var(--surface);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.trend-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.trend-head h3{font-size:26px;color:var(--kc)}
+.trend-head .tot{font-family:var(--display);font-weight:700;font-size:22px;font-variant-numeric:tabular-nums}
+.prize-in{font:inherit;font-weight:700;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);min-width:0;flex:1;max-width:320px}
+.wait{display:inline-flex;align-items:center;gap:4px;background:var(--gold-soft);color:var(--ink);border-radius:999px;padding:4px 10px;font-weight:800;font-size:14px;white-space:nowrap}
+.log-item.no .l,.log-item.no .p{text-decoration:line-through;opacity:.5}
+.trust{background:var(--good-soft);border-radius:14px;padding:10px 12px;font-weight:800;display:flex;align-items:center;gap:8px}
+.check-btn{background:var(--gold);color:#1d2433;border-color:var(--gold)}
+.rv{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px;border-radius:14px;background:var(--bg);font-weight:700}
+.rv .l{flex:1;min-width:160px}
+.rv .p{font-family:var(--display);font-weight:700}
+.rv .p.g{color:var(--good)} .rv .p.b{color:var(--bad)}
+.rv button{border-radius:12px;padding:10px 14px;font-weight:800}
+.ok-btn{background:var(--good);color:#fff}
+.no-btn{background:var(--bad-soft);color:var(--bad)}
+.rv select{font:inherit;font-weight:700;padding:9px 10px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--ink);max-width:100%}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap" id="app"></div>
+
+<script>
+(function(){
+const KIDS=[{id:"dior",name:"Dior",color:"var(--dior)",icon:"🦋"},{id:"diane",name:"Diane",color:"var(--diane)",icon:"🌸"},{id:"dylan",name:"Dylan",color:"var(--dylan)",icon:"🐬"}];
+const GOOD=[
+  {id:"homework",e:"📚",l:"Homework done",p:3,once:1},
+  {id:"study_time",e:"⏰",l:"Studied on time",p:3,once:1},
+  {id:"reading",e:"📖",l:"Extra reading / story book",p:2},
+  {id:"listened",e:"👂",l:"Listened the first time",p:2},
+  {id:"clean_eat",e:"🍽️",l:"Cleaned up after eating",p:1},
+  {id:"clean_study",e:"✏️",l:"Cleaned up after studying",p:1},
+  {id:"clean_play",e:"🧸",l:"Put toys away after playing",p:1},
+  {id:"garbage",e:"🗑️",l:"Put garbage in the bin",p:1},
+  {id:"bedroom",e:"🛏️",l:"Cleaned my bedroom",p:2,once:1},
+  {id:"home",e:"🧹",l:"Helped clean the home",p:2},
+  {id:"outside",e:"🌳",l:"Played outside",p:2},
+  {id:"slippers",e:"🩴",l:"Wore slippers all day",p:1,once:1},
+  {id:"no_fight",e:"🕊️",l:"No fighting today",p:2,once:1},
+  {id:"no_cry",e:"😊",l:"No crying today",p:1,once:1}];
+const BAD=[
+  {id:"fight",e:"😠",l:"Fighting",p:-3},
+  {id:"cry",e:"😭",l:"Crying",p:-1},
+  {id:"mess",e:"🥤",l:"Left a mess",p:-2},
+  {id:"throw_garbage",e:"🍌",l:"Threw garbage in the house",p:-2},
+  {id:"messy_room",e:"🧦",l:"Bedroom / toys left messy",p:-2,once:1},
+  {id:"no_slippers",e:"🦶",l:"No slippers",p:-1},
+  {id:"not_listen",e:"🙉",l:"Didn't listen (asked again and again)",p:-3},
+  {id:"late_study",e:"🐢",l:"Didn't study on time",p:-3},
+  {id:"cartoons",e:"📺",l:"Too much mobile / YouTube / cartoons",p:-3},
+  {id:"roblox_over",e:"🎮",l:"Went over Roblox time",p:-3}];
+const ALL=[...GOOD,...BAD];
+const DEFAULTS={target:12,chunkMin:60,normalMin:120,specialMin:180,specialDays:{},pin:"1234",weekPrize:"Special prize 🎁",monthPrize:"Big special prize 🎁",trust:{}};
+
+// ---- dates ----
+const pad=n=>String(n).padStart(2,"0");
+const dkey=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const today=()=>dkey(new Date());
+const yesterday=()=>{const d=new Date();d.setDate(d.getDate()-1);return dkey(d)};
+const daysAgo=n=>{const d=new Date();d.setDate(d.getDate()-n);return dkey(d)};
+const weekStart=()=>{const d=new Date();const off=(d.getDay()+6)%7;d.setDate(d.getDate()-off);return dkey(d)}; // week starts Monday
+const monthStart=()=>{const d=new Date();d.setDate(1);return dkey(d)};
+const rangeDays=(from)=>{const out=[];const d=new Date(from+"T12:00:00");const t=today();while(dkey(d)<=t){out.push(dkey(d));d.setDate(d.getDate()+1)}return out};
+const hm=ts=>{const d=new Date(ts);return pad(d.getHours())+":"+pad(d.getMinutes())};
+const fmt=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;return (h?h+":"+pad(m):m)+":"+pad(ss)};
+const mins=ms=>Math.floor(Math.max(0,ms)/60000);
+
+// ---- store: shared db when available, else this browser ----
+const cache={};let settings={...DEFAULTS};let db=null;
+const emptyDay=(kid,date)=>({kid,date,log:[],sessions:[],runStart:null,overPenalty:false,prizeGiven:false});
+const dayId=(kid,date)=>date+"_"+kid;
+const getDay=(kid,date)=>cache[dayId(kid,date)]||emptyDay(kid,date);
+function lsGet(k){try{return JSON.parse(localStorage.getItem("kd:"+k))}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem("kd:"+k,JSON.stringify(v))}catch(e){}}
+const queues={};
+function writeDoc(path,data){
+  lsSet(path,data);
+  if(!db) return;
+  const prev=queues[path]||Promise.resolve();
+  queues[path]=prev.then(()=>db.doc(path).set(JSON.parse(JSON.stringify(data)))).catch(err=>{console.warn(err);showToast("Could not save. Check the internet.")});
+}
+function saveDay(day){cache[dayId(day.kid,day.date)]=day;writeDoc("days/"+dayId(day.kid,day.date),day);render()}
+function saveSettings(){writeDoc("settings/main",settings);render()}
+
+function loadLocal(){
+  const s=lsGet("settings/main");if(s) settings={...DEFAULTS,...s};
+  for(const k of KIDS) for(let i=0;i<40;i++){const d=daysAgo(i);const v=lsGet("days/"+dayId(k.id,d));if(v) cache[dayId(k.id,d)]=v}
+}
+const unsubs=[];let subDate=null;
+function subscribe(){
+  if(!db) return;
+  unsubs.splice(0).forEach(u=>u());
+  subDate=today();
+  unsubs.push(db.doc("settings/main").onSnapshot(s=>{if(s.exists){settings={...DEFAULTS,...s.data()};render()}},e=>console.warn(e)));
+  unsubs.push(db.collection("days").where("date",">=",daysAgo(40)).onSnapshot(q=>{
+    for(const doc of q.docs){cache[doc.id]=JSON.parse(JSON.stringify(doc.data()))}
+    render();
+  },e=>console.warn(e)));
+}
+
+// ---- derived ----
+// entry status s: "wait" = kid tapped, parent has not checked yet; "no" = parent denied; missing/"ok" = confirmed
+const okE=x=>!x.s||x.s==="ok";
+const live=x=>x.s!=="no";
+const points=day=>day.log.reduce((a,x)=>a+(okE(x)?x.p:0),0);
+const plus=day=>day.log.reduce((a,x)=>a+(okE(x)&&x.p>0?x.p:0),0);
+const minus=day=>day.log.reduce((a,x)=>a+(okE(x)&&x.p<0?-x.p:0),0);
+const waiting=day=>day.log.filter(x=>x.s==="wait");
+const trustOf=kid=>(settings.trust||{})[kid]||0;
+const allWaiting=()=>KIDS.reduce((a,k)=>a+waiting(getDay(k.id,today())).length,0);
+const chips=d=>`<div class="pm"><span class="chip g">⬆️ +${plus(d)}</span><span class="chip b">⬇️ −${minus(d)}</span></div>`;
+const starRow=(pts,t)=>{const n=Math.max(0,Math.min(5,Math.floor(pts/t*5)));return "⭐".repeat(n)+"<span style='opacity:.25'>"+"⭐".repeat(5-n)+"</span>"};
+const isSpecial=(date=today())=>!!settings.specialDays[date];
+const limitMs=()=>(isSpecial()?settings.specialMin:settings.normalMin)*60000;
+const playedMs=(day,now=Date.now())=>day.sessions.reduce((a,s)=>a+(s.end-s.start),0)+(day.runStart?now-day.runStart:0);
+const earnedPrize=kid=>{const y=cache[dayId(kid,yesterday())];return y&&points(y)>=settings.target?y:null};
+
+const dayPts=(kid,date)=>{const d=cache[dayId(kid,date)];return d?points(d):0};
+const total=(kid,days)=>days.reduce((a,d)=>a+dayPts(kid,d),0);
+function starOf(days){
+  const sc=KIDS.map(k=>({k,t:total(k.id,days)})).sort((a,b)=>b.t-a.t);
+  if(sc[0].t<=0) return null;
+  return sc.filter(x=>x.t===sc[0].t);
+}
+function trendSVG(kid,days,color){
+  const W=600,H=170,P=26;
+  const vals=days.map(d=>dayPts(kid,d));
+  const tgt=settings.target;
+  const max=Math.max(tgt+2,...vals),min=Math.min(0,...vals);
+  const x=i=>days.length<2?W/2:P+i*(W-2*P)/(days.length-1);
+  const y=v=>H-P-(v-min)/(max-min||1)*(H-2*P);
+  let segs="";
+  for(let i=1;i<vals.length;i++){const up=vals[i]>=vals[i-1];
+    segs+=`<line x1="${x(i-1)}" y1="${y(vals[i-1])}" x2="${x(i)}" y2="${y(vals[i])}" stroke="${up?"var(--good)":"var(--bad)"}" stroke-width="6" stroke-linecap="round"/>`}
+  const dots=vals.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="${i===vals.length-1?8:5}" fill="${v>=tgt?"var(--gold)":color}"/>`).join("");
+  const showLbl=days.length<=8;
+  const lbls=days.map((d,i)=>(showLbl||i%5===0||i===days.length-1)?`<text x="${x(i)}" y="${H-4}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--muted)">${showLbl?new Date(d+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short"}):+d.slice(8)}</text>`:"").join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Daily points">
+    <line x1="${P}" x2="${W-P}" y1="${y(tgt)}" y2="${y(tgt)}" stroke="var(--gold)" stroke-width="2" stroke-dasharray="6 6"/>
+    <text x="${W-P}" y="${y(tgt)-6}" text-anchor="end" font-size="13" font-weight="800" fill="var(--gold)">🎯 ${tgt}</text>
+    ${min<0?`<line x1="${P}" x2="${W-P}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)" stroke-width="2"/>`:""}
+    ${segs}${dots}${lbls}</svg>`;
+}
+
+// ---- actions ----
+let lastAdd=null;
+function addAct(kid,act){
+  const day=structuredClone(getDay(kid,today()));
+  const before=points(day);
+  const entry={id:Math.random().toString(36).slice(2,9),t:Date.now(),a:act.id,e:act.e,l:act.l,p:act.p,s:parentOn()?"ok":"wait"};
+  day.log.unshift(entry);saveDay(day);
+  lastAdd={kid,id:entry.id};
+  celebrate(act.p);
+  if(before<settings.target&&points(day)>=settings.target) party(kidById(kid).name);
+  showToast(entry.s==="wait"?"⏳ Sent to Dad to check: "+act.l:(act.p>0?"+":"")+act.p+"  "+act.l,true);
+}
+function removeEntry(kid,id,date=today()){
+  const day=structuredClone(getDay(kid,date));
+  const e=day.log.find(x=>x.id===id);
+  day.log=day.log.filter(x=>x.id!==id);
+  if(e&&e.a==="roblox_over") day.overPenalty=false;
+  saveDay(day);
+}
+function review(kid,id,how,newAct){
+  const day=structuredClone(getDay(kid,today()));
+  const e=day.log.find(x=>x.id===id);if(!e||e.s!=="wait") return;
+  const before=points(day);
+  if(how==="ok"){e.s="ok";settings={...settings,trust:{...(settings.trust||{}),[kid]:trustOf(kid)+1}};saveSettings()}
+  else if(how==="no") e.s="no";
+  else if(how==="change"){const a=ALL.find(x=>x.id===newAct);if(!a) return;Object.assign(e,{a:a.id,e:a.e,l:a.l,p:a.p,s:"ok"})}
+  saveDay(day);
+  if(before<settings.target&&points(day)>=settings.target) party(kidById(kid).name);
+}
+function startPlay(kid){
+  const day=structuredClone(getDay(kid,today()));
+  if(day.runStart) return;
+  day.runStart=Date.now();saveDay(day);
+}
+function stopPlay(kid){
+  const day=structuredClone(getDay(kid,today()));
+  if(!day.runStart) return;
+  day.sessions.push({start:day.runStart,end:Date.now()});day.runStart=null;
+  checkOver(day);saveDay(day);
+}
+function checkOver(day){
+  // one automatic penalty per day, 2 minutes grace after the daily limit
+  if(!day.overPenalty&&playedMs(day)>limitMs()+120000){
+    const a=BAD.find(b=>b.id==="roblox_over");
+    day.overPenalty=true;
+    day.log.unshift({id:Math.random().toString(36).slice(2,9),t:Date.now(),a:a.id,e:a.e,l:a.l+" (auto)",p:a.p});
+    return true;
+  }
+  return false;
+}
+
+// ---- view state ----
+let view={screen:"home",kid:null};let parentUntil=0;let pinTry="";
+const parentOn=()=>Date.now()<parentUntil;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const kidById=id=>KIDS.find(k=>k.id===id);
+const niceDate=()=>new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+
+function render(){
+  const app=$("#app");
+  if(view.screen==="home") app.innerHTML=homeHTML();
+  else if(view.screen==="kid") app.innerHTML=kidHTML(kidById(view.kid));
+  else if(view.screen==="parent") app.innerHTML=parentHTML();
+  else if(view.screen==="progress") app.innerHTML=progressHTML();
+  else if(view.screen==="review") app.innerHTML=reviewHTML();
+  tick();
+}
+function homeHTML(){
+  return `<div class="top"><div><h1>Kids Daily ⭐</h1><div class="date">${esc(niceDate())}</div></div>
+    ${isSpecial()?`<span class="pill special">🎉 Special day: ${settings.specialMin/60} hours Roblox</span>`:""}</div>
+  <div class="kids">${KIDS.map(k=>{
+    const d=getDay(k.id,today()),pts=points(d),pct=Math.max(0,Math.min(100,pts/settings.target*100));
+    const pr=earnedPrize(k.id);
+    return `<button class="kid-card" style="--kc:${k.color}" data-kid="${k.id}">
+      <div class="row"><div class="face">${k.icon}</div><h2>${k.name}</h2></div>
+      <div class="stat"><span>Points</span><b>${pts} / ${settings.target}</b></div>
+      <div class="meter"><i style="width:${pct}%"></i></div>
+      ${chips(d)}
+      <div class="stat"><span>🤝 Trust points</span><b>${trustOf(k.id)}</b></div>
+      ${waiting(d).length?`<div class="stat"><span class="wait">⏳ ${waiting(d).length} waiting for Dad</span></div>`:""}
+      <div class="stat"><span>🎮 Roblox left</span><b data-left="${k.id}">${fmt(limitMs()-playedMs(d))}</b></div>
+      ${pr?`<div class="prize">🎁 ${pr.prizeGiven?"40 Robux given ✓":"40 Robux today!"}</div>`:""}
+    </button>`}).join("")}</div>
+  ${awardsHTML()}
+  <div class="foot"><span>${db?"Saved for all your devices":"Saved on this device only"}</span><span style="display:flex;gap:10px;flex-wrap:wrap"><button class="small-btn check-btn" data-go="review">✅ Check (${allWaiting()})</button><button class="small-btn" data-go="progress">📈 Progress</button><button class="small-btn" data-go="parent">👨 Parent</button></span></div>`;
+}
+function awardsHTML(){
+  const one=(title,medal,days,prize,sub)=>{const w=starOf(days);
+    return `<div class="award"><div class="medal">${medal}</div><div><h3>${title}</h3>
+      <div class="who">${w?w.map(x=>`<span style="color:${x.k.color}">${x.k.name}</span>`).join(" & ")+` · ${w[0].t} pts`:"Nobody yet"}</div>
+      <div class="hint">${esc(prize)} · ${sub}</div></div></div>`};
+  return `<div class="awards">${one("Star of the Week","🏅",rangeDays(weekStart()),settings.weekPrize,"week so far")}${one("Star of the Month","🏆",rangeDays(monthStart()),settings.monthPrize,new Date().toLocaleDateString("en-GB",{month:"long"}))}</div>`;
+}
+let range="week";
+function progressHTML(){
+  const days=range==="week"?rangeDays(daysAgo(6)):rangeDays(daysAgo(29));
+  return `<div class="kid-head"><button class="back" data-go="home" aria-label="Back">←</button><h1>Progress 📈</h1></div>
+    <div class="tabs"><button class="${range==="week"?"on":""}" data-range="week">1 week</button><button class="${range==="month"?"on":""}" data-range="month">1 month</button></div>
+    ${awardsHTML()}
+    ${KIDS.map(k=>{const tot=total(k.id,days);const hit=days.filter(d=>dayPts(k.id,d)>=settings.target).length;
+      return `<div class="trend" style="--kc:${k.color}"><div class="trend-head"><h3>${k.name}</h3>
+        <span class="tot">${tot} pts · 🎯 ${hit} day${hit===1?"":"s"}</span></div>${trendSVG(k.id,days,k.color)}</div>`}).join("")}
+    <div class="hint">Green line = going up. Red line = going down. Gold dot = target reached that day.</div>`;
+}
+function tileHTML(a,kind,day){const done=a.once&&day.log.some(x=>x.a===a.id&&live(x));return `<button class="tile ${kind}${done?" done":""}" data-act="${a.id}" ${done?"disabled":""}><span class="e">${a.e}</span><span>${esc(a.l)}</span><span class="p">${done?"Done ✓":(a.p>0?"+":"")+a.p}</span></button>`}
+function kidHTML(k){
+  const d=getDay(k.id,today()),pts=points(d),t=settings.target,pct=Math.max(0,Math.min(100,pts/t*100));
+  const msg=pts>=t?"🎉 Target reached! 40 Robux tomorrow morning!":`${t-pts} more points to win 40 Robux`;
+  const pr=earnedPrize(k.id);
+  return `<div class="kid-head" style="--kc:${k.color}"><button class="back" data-go="home" aria-label="Back">←</button><h1>${k.icon} ${k.name}</h1>
+      ${isSpecial()?`<span class="pill special">🎉 Special day</span>`:""}</div>
+    ${pr&&!pr.prizeGiven?`<div class="prize">🎁 You did it yesterday! Ask for your 40 Robux today.</div>`:""}
+    <div class="score" style="--kc:${k.color}">
+      <div class="big">${pts}<small> / ${t} points</small></div>
+      <div class="stars">${starRow(pts,t)}</div>
+      ${chips(d)}
+      <div class="meter"><i style="width:${pct}%"></i></div>
+      <div class="msg">${msg}</div>
+      ${waiting(d).length?`<div><span class="wait">⏳ ${waiting(d).length} waiting for Dad to check</span></div>`:""}
+      <div class="trust">🤝 Trust points: ${trustOf(k.id)}</div>
+    </div>
+    <div class="cols">
+      <div class="panel"><h3>😀 Good things</h3><div class="tiles">${GOOD.map(a=>tileHTML(a,"good",d)).join("")}</div></div>
+      <div class="panel"><h3>😬 Oops things</h3><div class="tiles">${BAD.map(a=>tileHTML(a,"bad",d)).join("")}</div></div>
+    </div>
+    <div class="cols">
+      <div class="panel roblox"><h3>🎮 Roblox time</h3>
+        <div class="clock-row"><div><div class="clock" id="clock">0:00</div><div class="clock-sub" id="clockSub"></div></div>
+          <div class="clock-sub" id="leftTxt"></div></div>
+        <div class="meter" style="--kc:${k.color}"><i id="playBar" style="width:0%"></i></div>
+        <div id="playAlert"></div>
+        <button class="go ${d.runStart?"stop":""}" id="goBtn">${d.runStart?"⏹ Stop playing":"▶️ Start playing"}</button>
+        <div class="hint">Play in chunks of up to ${settings.chunkMin} minutes. Leftover time does not save for tomorrow.</div>
+      </div>
+      <div class="panel"><h3>📝 Today</h3><div class="log">${d.log.length?d.log.map(e=>`<div class="log-item${e.s==="no"?" no":""}"><span class="t">${hm(e.t)}</span><span>${e.e}</span><span class="l">${esc(e.l)}</span>${e.s==="wait"?`<span class="wait">⏳</span>`:""}${e.s==="no"?`<span class="wait">✗ No</span>`:""}<span class="p ${e.p>0?"g":"b"}">${e.p>0?"+":""}${e.p}</span>${parentOn()?`<button class="x" data-del="${e.id}">Remove</button>`:""}</div>`).join(""):`<div class="empty">Nothing yet. Tap a good thing when you do it! Dad will check it.</div>`}</div>
+        ${d.sessions.length?`<div class="hint">Roblox today: ${d.sessions.map(s=>hm(s.start)+"–"+hm(s.end)).join(", ")}</div>`:""}
+      </div>
+    </div>`;
+}
+function pinHTML(title){
+  return `<div class="kid-head"><button class="back" data-go="home" aria-label="Back">←</button><h1>${title}</h1></div>
+    <div class="parent"><div class="field">Enter PIN</div>
+      <div class="pin"><input id="pinIn" type="password" inputmode="numeric" maxlength="8" autocomplete="off" value="${esc(pinTry)}"><button class="small-btn" id="pinOk">Open</button></div>
+      <div class="hint" id="pinMsg">The first PIN is 1234. Change it in Parent after you open.</div></div>`;
+}
+function reviewHTML(){
+  if(!parentOn()) return pinHTML("Check ✅");
+  const opts=a=>ALL.map(x=>`<option value="${x.id}"${x.id===a?" selected":""}>${x.e} ${esc(x.l)} (${x.p>0?"+":""}${x.p})</option>`).join("");
+  const n=allWaiting();
+  return `<div class="kid-head"><button class="back" data-go="home" aria-label="Back">←</button><h1>Check ✅</h1></div>
+    ${n?`<button class="go" id="okAll">✅ Confirm all ${n}</button>`:`<div class="parent"><div class="empty">Nothing to check right now. 👍</div></div>`}
+    ${KIDS.map(k=>{const w=waiting(getDay(k.id,today()));if(!w.length) return "";
+      return `<div class="parent"><h3 style="color:${k.color}">${k.icon} ${k.name} · 🤝 ${trustOf(k.id)}</h3>
+      ${w.map(e=>`<div class="rv"><span class="t">${hm(e.t)}</span><span>${e.e}</span><span class="l">${esc(e.l)}</span><span class="p ${e.p>0?"g":"b"}">${e.p>0?"+":""}${e.p}</span>
+        <button class="ok-btn" data-rv="${k.id}:${e.id}:ok">✓ Confirm</button><button class="no-btn" data-rv="${k.id}:${e.id}:no">✗ Deny</button>
+        <select data-chg="${k.id}:${e.id}" aria-label="Change to"><option value="">Change to…</option>${opts("")}</select></div>`).join("")}</div>`}).join("")}
+    <div class="hint">Confirm gives the points and +1 trust point. Deny gives no points. Change swaps it to the right activity and gives those points.</div>`;
+}
+function parentHTML(){
+  if(!parentOn()) return pinHTML("Parent");
+  const sp=isSpecial();
+  return `<div class="kid-head"><button class="back" data-go="home" aria-label="Back">←</button><h1>Parent</h1></div>
+    <div class="parent">
+      <div class="field"><span>🎯 Daily points target</span><div class="stepper"><button data-step="target:-1">−</button><span>${settings.target}</span><button data-step="target:1">+</button></div></div>
+      <div class="field"><span>🎉 Today is a special day (${settings.specialMin/60}h Roblox)</span><button class="toggle ${sp?"on":""}" id="spBtn">${sp?"Yes":"No"}</button></div>
+      <div class="field"><span>🎮 Normal day limit (min)</span><div class="stepper"><button data-step="normalMin:-15">−</button><span>${settings.normalMin}</span><button data-step="normalMin:15">+</button></div></div>
+      <div class="field"><span>🎮 Special day limit (min)</span><div class="stepper"><button data-step="specialMin:-15">−</button><span>${settings.specialMin}</span><button data-step="specialMin:15">+</button></div></div>
+      <div class="field"><span>⏱️ Longest chunk (min)</span><div class="stepper"><button data-step="chunkMin:-15">−</button><span>${settings.chunkMin}</span><button data-step="chunkMin:15">+</button></div></div>
+    </div>
+    <div class="parent"><h3>🏅 Star prizes</h3>
+      <div class="field"><span>Star of the Week prize</span><input class="prize-in" id="weekPrize" maxlength="60" value="${esc(settings.weekPrize)}"></div>
+      <div class="field"><span>Star of the Month prize</span><input class="prize-in" id="monthPrize" maxlength="60" value="${esc(settings.monthPrize)}"></div>
+    </div>
+    <div class="parent"><h3>🎁 Prizes from yesterday</h3>
+      ${KIDS.map(k=>{const y=cache[dayId(k.id,yesterday())];const p=y?points(y):0;const won=p>=settings.target;
+        return `<div class="field"><span style="color:${k.color}">${k.name}: ${p} points</span>${won?`<button class="toggle ${y.prizeGiven?"on":""}" data-prize="${k.id}">${y.prizeGiven?"Given ✓":"Mark 40 Robux given"}</button>`:`<span class="hint">Did not reach ${settings.target}</span>`}</div>`}).join("")}
+    </div>
+    <div class="parent"><h3>🔒 PIN</h3>
+      <div class="pin"><input id="newPin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="new"><button class="small-btn" id="pinSave">Save PIN</button></div>
+      <div class="hint">While Parent is open (10 minutes), each kid's page shows Remove buttons to fix wrong taps.</div>
+      <button class="small-btn" id="lock">Lock parent mode</button>
+    </div>`;
+}
+
+// ---- live clock ----
+function tick(){
+  if(db&&subDate&&subDate!==today()){subscribe();}
+  const now=Date.now();
+  document.querySelectorAll("[data-left]").forEach(el=>{el.textContent=fmt(limitMs()-playedMs(getDay(el.dataset.left,today()),now))});
+  if(view.screen!=="kid") return;
+  const d=getDay(view.kid,today()),used=playedMs(d,now),lim=limitMs();
+  const clock=$("#clock");if(!clock) return;
+  const chunk=d.runStart?now-d.runStart:0;
+  clock.textContent=d.runStart?fmt(chunk):fmt(used);
+  $("#clockSub").textContent=d.runStart?"this time · "+mins(used)+" min today":"played today";
+  $("#leftTxt").textContent=used>=lim?"No time left today":fmt(lim-used)+" left";
+  $("#playBar").style.width=Math.min(100,used/lim*100)+"%";
+  const go=$("#goBtn");
+  go.disabled=!d.runStart&&used>=lim;
+  if(go.disabled) go.textContent="⛔ No more Roblox today";
+  let a="";
+  if(used>=lim) a=`<div class="alert over">⏰ Time's up! Please stop Roblox now.</div>`;
+  else if(d.runStart&&chunk>=settings.chunkMin*60000) a=`<div class="alert warn">🧃 ${settings.chunkMin} minutes done. Time for a break!</div>`;
+  else if(lim-used<10*60000) a=`<div class="alert warn">⌛ Less than 10 minutes left today.</div>`;
+  const pa=$("#playAlert");if(pa.innerHTML!==a) pa.innerHTML=a;
+  // auto penalty while still playing past the limit
+  if(d.runStart&&!d.overPenalty&&used>lim+120000){const c=structuredClone(d);if(checkOver(c)){saveDay(c);showToast("−3 Went over Roblox time")}}
+}
+setInterval(tick,1000);
+
+// ---- fun ----
+function celebrate(p){
+  const fx=document.createElement("div");fx.className="fx";
+  fx.innerHTML=`<div class="float ${p>0?"g":"b"}">${p>0?"+":"−"}${Math.abs(p)}</div>`;
+  if(p>0){const em=["⭐","✨","🌟","💖","🎉"];for(let i=0;i<14;i++){const b=document.createElement("span");b.className="bit";b.textContent=em[i%em.length];
+    const ang=Math.random()*Math.PI*2,r=140+Math.random()*180;b.style.left="50%";b.style.top="42%";
+    b.style.setProperty("--dx",Math.cos(ang)*r+"px");b.style.setProperty("--dy",Math.sin(ang)*r+"px");b.style.setProperty("--rot",(Math.random()*360|0)+"deg");fx.appendChild(b)}}
+  else{const sc=document.querySelector(".score");if(sc){sc.classList.remove("shake");void sc.offsetWidth;sc.classList.add("shake")}}
+  document.body.appendChild(fx);setTimeout(()=>fx.remove(),1300);
+}
+function party(name){
+  const el=document.createElement("div");el.className="party";
+  el.innerHTML=`<div><div style="font-size:80px">🏆</div><h2>Yay ${esc(name)}!</h2><p>You reached today's target!</p><p>🎁 40 Robux tomorrow morning</p><button id="partyOk">Yes! 🎉</button></div>`;
+  document.body.appendChild(el);
+}
+
+// ---- toast ----
+let toastTimer;
+function showToast(text,undo){
+  let t=$(".toast");if(!t){t=document.createElement("div");t.className="toast";document.body.appendChild(t)}
+  t.innerHTML=`<span>${esc(text)}</span>${undo?`<button id="undoBtn">Undo</button>`:""}`;
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.remove();lastAdd=null},undo?6000:3500);
+}
+
+// ---- events ----
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b) return;
+  if(b.id==="partyOk"){b.closest(".party").remove();return}
+  if(b.id==="undoBtn"){if(lastAdd){removeEntry(lastAdd.kid,lastAdd.id);lastAdd=null}$(".toast")?.remove();return}
+  if(b.dataset.range){range=b.dataset.range;render();return}
+  if(b.dataset.kid){view={screen:"kid",kid:b.dataset.kid};render();scrollTo(0,0);return}
+  if(b.dataset.go){view={screen:b.dataset.go,kid:null};pinTry="";render();scrollTo(0,0);return}
+  if(b.dataset.act){const a=ALL.find(x=>x.id===b.dataset.act);if(a.once&&getDay(view.kid,today()).log.some(x=>x.a===a.id&&live(x))) return;addAct(view.kid,a);const nb=document.querySelector(`[data-act="${a.id}"]`);nb&&nb.classList.add("pop");return}
+  if(b.dataset.rv){const[k,id,how]=b.dataset.rv.split(":");review(k,id,how);return}
+  if(b.id==="okAll"){for(const k of KIDS) for(const e of waiting(getDay(k.id,today()))) review(k.id,e.id,"ok");return}
+  if(b.dataset.del){removeEntry(view.kid,b.dataset.del);return}
+  if(b.id==="goBtn"){const d=getDay(view.kid,today());d.runStart?stopPlay(view.kid):startPlay(view.kid);return}
+  if(b.id==="pinOk"){const v=$("#pinIn").value;if(v===String(settings.pin)){parentUntil=Date.now()+600000;pinTry="";render()}else{$("#pinMsg").textContent="Wrong PIN. Try again.";$("#pinIn").value=""}return}
+  if(b.dataset.step){const[k,s]=b.dataset.step.split(":");const min={target:1,normalMin:15,specialMin:15,chunkMin:15}[k];settings={...settings,[k]:Math.max(min,settings[k]+Number(s))};saveSettings();return}
+  if(b.id==="spBtn"){const sd={...settings.specialDays};const t=today();if(sd[t]) delete sd[t];else sd[t]=true;
+    for(const k of Object.keys(sd)) if(k<yesterday()) delete sd[k];settings={...settings,specialDays:sd};saveSettings();return}
+  if(b.dataset.prize){const y=structuredClone(getDay(b.dataset.prize,yesterday()));y.prizeGiven=!y.prizeGiven;saveDay(y);return}
+  if(b.id==="pinSave"){const v=$("#newPin").value.trim();if(/^\d{4,8}$/.test(v)){settings={...settings,pin:v};saveSettings();showToast("New PIN saved")}else showToast("Use 4 to 8 numbers");return}
+  if(b.id==="lock"){parentUntil=0;view={screen:"home",kid:null};render();return}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="pinIn") $("#pinOk").click()});
+document.addEventListener("change",e=>{if(e.target.dataset.chg&&e.target.value){const[k,id]=e.target.dataset.chg.split(":");review(k,id,"change",e.target.value);return}if(e.target.id==="weekPrize"||e.target.id==="monthPrize"){settings={...settings,[e.target.id]:e.target.value.trim()||DEFAULTS[e.target.id]};saveSettings()}});
+document.addEventListener("input",e=>{if(e.target.id==="pinIn") pinTry=e.target.value});
+
+loadLocal();render();
+(async()=>{
+  try{
+    if(window.claude&&window.claude.use){db=await window.claude.use("db");if(db){subscribe();render()}}
+  }catch(err){db=null}
+})();
+})();
+</script>
+
+</body></html>

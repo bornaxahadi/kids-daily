@@ -284,7 +284,19 @@ const BAD=[
   {id:"cartoons",e:"📺",l:"Too much mobile / YouTube / cartoons",p:-3},
   {id:"roblox_over",e:"🎮",l:"Went over Roblox time",p:-3}];
 const ALL=[...GOOD,...BAD];
-const DEFAULTS={target:12,chunkMin:60,normalMin:120,specialMin:180,specialDays:{},pin:"1234",weekAed:50,monthPrize:"Big special prize 🎁"};
+const DEFAULTS={target:12,chunkMin:60,normalMin:120,specialMin:180,specialDays:{},weekAed:50,monthPrize:"Big special prize 🎁"};
+/* PIN is kept only as a SHA-256 hash (repo is public) */
+const sha256=s=>{const R=(x,n)=>x>>>n|x<<32-n,K=[],H=[];for(let c=2,p=0;p<64;c++){let ok=1;for(let i=2;i*i<=c;i++)if(c%i==0){ok=0;break}if(ok){K[p]=Math.floor(Math.pow(c,1/3)%1*4294967296)|0;if(p<8)H[p]=Math.floor(Math.pow(c,.5)%1*4294967296)|0;p++}}
+const m=[...new TextEncoder().encode(s)],bits=m.length*8;m.push(128);while(m.length%64!=56)m.push(0);m.push(0,0,0,0,bits>>>24&255,bits>>>16&255,bits>>>8&255,bits&255);
+for(let o=0;o<m.length;o+=64){const w=[];for(let i=0;i<16;i++)w[i]=m[o+i*4]<<24|m[o+i*4+1]<<16|m[o+i*4+2]<<8|m[o+i*4+3];
+for(let i=16;i<64;i++){const x=w[i-15],y=w[i-2];w[i]=w[i-16]+(R(x,7)^R(x,18)^x>>>3)+w[i-7]+(R(y,17)^R(y,19)^y>>>10)|0}
+let[a,b,c,d,e,f,g,h]=H;for(let i=0;i<64;i++){const t1=h+(R(e,6)^R(e,11)^R(e,25))+(e&f^~e&g)+K[i]+w[i]|0,t2=(R(a,2)^R(a,13)^R(a,22))+(a&b^a&c^b&c)|0;h=g;g=f;f=e;e=d+t1|0;d=c;c=b;b=a;a=t1+t2|0}
+H[0]=H[0]+a|0;H[1]=H[1]+b|0;H[2]=H[2]+c|0;H[3]=H[3]+d|0;H[4]=H[4]+e|0;H[5]=H[5]+f|0;H[6]=H[6]+g|0;H[7]=H[7]+h|0}
+return H.map(x=>(x>>>0).toString(16).padStart(8,"0")).join("")};
+const pinHash=v=>sha256(v+"|kd-salt-v1");
+const DEFAULT_PIN_HASH="e1c39cac1dd0e2fad10793f184c79777744d62acc1eb0bc1cfb24f9ae53dca5c";
+/* old plain "1234" default is ignored; a PIN Boss saved earlier as plain text still works */
+const pinOk=v=>{const s=settings||{};if(s.pinHash)return pinHash(v)===s.pinHash;if(s.pin&&String(s.pin)!=="1234")return v===String(s.pin);return pinHash(v)===DEFAULT_PIN_HASH};
 
 // ---- sound (synthesized game blips, no files) ----
 let muted=false;try{muted=localStorage.getItem("kd:muted")==="1"}catch(e){}
@@ -709,7 +721,7 @@ function parentHTML(){
   if(!parentOn()) return `<div class="kid-head"><button class="back" data-go="home" aria-label="Back">←</button><h1>Parent</h1></div>
     <div class="parent"><div class="field">Enter PIN</div>
       <div class="pin"><input id="pinIn" type="password" inputmode="numeric" maxlength="8" autocomplete="off" value="${esc(pinTry)}"><button class="small-btn" id="pinOk">Open</button></div>
-      <div class="hint" id="pinMsg">The first PIN is 1234. Change it below after you open.</div></div>`;
+      <div class="hint" id="pinMsg">Ask Dad for the PIN.</div></div>`;
   const sp=isSpecial();
   return `<div class="kid-head"><button class="back" data-go="home" aria-label="Back">←</button><h1>Parent</h1></div>
     <div class="parent">
@@ -810,12 +822,12 @@ document.addEventListener("click",e=>{
   if(b.dataset.act){const a=ALL.find(x=>x.id===b.dataset.act);if(a.once&&getDay(view.kid,viewDate).log.some(x=>x.a===a.id)) return;if(!isToday()&&!parentOn()) return;addAct(view.kid,a);const nb=document.querySelector(`[data-act="${a.id}"]`);nb&&nb.classList.add("pop");return}
   if(b.dataset.del){removeEntry(view.kid,b.dataset.del);return}
   if(b.id==="goBtn"){const d=getDay(view.kid,today());d.runStart?stopPlay(view.kid):startPlay(view.kid);return}
-  if(b.id==="pinOk"){const v=$("#pinIn").value;if(v===String(settings.pin)){parentUntil=Date.now()+600000;pinTry="";render()}else{$("#pinMsg").textContent="Wrong PIN. Try again.";$("#pinIn").value=""}return}
+  if(b.id==="pinOk"){const v=$("#pinIn").value;if(pinOk(v)){parentUntil=Date.now()+600000;pinTry="";render()}else{$("#pinMsg").textContent="Wrong PIN. Try again.";$("#pinIn").value=""}return}
   if(b.dataset.step){const[k,s]=b.dataset.step.split(":");const min={target:1,normalMin:15,specialMin:15,chunkMin:15,weekAed:0}[k];settings={...settings,[k]:Math.max(min,settings[k]+Number(s))};saveSettings();return}
   if(b.id==="spBtn"){const sd={...settings.specialDays};const t=today();if(sd[t]) delete sd[t];else sd[t]=true;
     for(const k of Object.keys(sd)) if(k<yesterday()) delete sd[k];settings={...settings,specialDays:sd};saveSettings();return}
   if(b.dataset.prize){const y=structuredClone(getDay(b.dataset.prize,yesterday()));y.prizeGiven=!y.prizeGiven;saveDay(y);return}
-  if(b.id==="pinSave"){const v=$("#newPin").value.trim();if(/^\d{4,8}$/.test(v)){settings={...settings,pin:v};saveSettings();showToast("New PIN saved")}else showToast("Use 4 to 8 numbers");return}
+  if(b.id==="pinSave"){const v=$("#newPin").value.trim();if(/^\d{4,8}$/.test(v)){settings={...settings,pinHash:pinHash(v)};delete settings.pin;saveSettings();showToast("New PIN saved")}else showToast("Use 4 to 8 numbers");return}
   if(b.id==="lock"){parentUntil=0;view={screen:"home",kid:null};render();return}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="pinIn") $("#pinOk").click()});

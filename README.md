@@ -33,7 +33,7 @@ A simple daily points app for Diyar, Dayan and Dilan. It is a single `index.html
 - **Fix mistakes** (Parent): change or remove any entry, on any day, with the PIN.
 - Kids also earn levels (🌱 Seedling up to 👑 Legend) from confirmed points, and a 🔥 streak for days in a row at the target.
 
-- Tap **Parent** and enter the PIN. **The default PIN is `1234` — change it right away** in the PIN section.
+- Tap **Parent** and enter the parent PIN (only Dad knows it). You can change it in the PIN section.
 - In Parent mode you can set the daily target, Roblox limits, mark special days, set Star prizes, mark Robux as given, and remove wrong taps (Remove buttons appear on each kid's page for 10 minutes).
 
 ## Where the points are saved

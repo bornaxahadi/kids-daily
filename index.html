@@ -253,9 +253,46 @@ button:focus{transform:scale(1.04);z-index:2;position:relative}
 .vd{padding:8px 12px;border-radius:8px;border:2px solid var(--edge);font-weight:700}
 .vd.g{background:var(--good-soft)}.vd.b{background:var(--bad-soft)}.vd.w{background:var(--gold-soft)}
 @media (max-width:600px){.arow{grid-template-columns:1fr auto}.arow .abar{grid-column:1/-1;order:3}}
+
+/* Play scene: the three characters run, walk, jump and play-fight on a blocky baseplate. */
+.stagewrap{padding-bottom:0;margin-bottom:-6px}.stagewrap:not([hidden]) .stage{margin-bottom:6px}
+.stage{position:relative;height:clamp(150px,19vw,180px);border:3px solid var(--edge,#1d2433);border-radius:var(--r);overflow:hidden;background:linear-gradient(#8fd0ff,#dff3ff 70%);box-shadow:0 5px 0 var(--edge,#1d2433)}
+.stage .cloud{position:absolute;height:18px;width:64px;background:#fff;border-radius:4px;box-shadow:18px -10px 0 #fff,40px 0 0 #fff;opacity:.9;animation:cloud 40s linear infinite}
+@keyframes cloud{from{transform:translateX(-120px)}to{transform:translateX(110vw)}}
+.stage .sun{position:absolute;right:18px;top:12px;width:34px;height:34px;background:#ffd23f;border:3px solid #e0a100;border-radius:6px;animation:wob 4s ease-in-out infinite}
+.stage .ground{position:absolute;left:0;right:0;bottom:0;height:34px;background:
+  repeating-linear-gradient(90deg,rgba(0,0,0,.12) 0 2px,transparent 2px 36px),#5fae55;border-top:5px solid #3f8a3a}
+.actor{position:absolute;bottom:20px;left:calc(var(--x,50)*1%);transform:translateX(-50%);transition:left var(--t,3s) linear;width:62px;text-align:center}
+.actor .flip{transform:scaleX(var(--dir,1))}
+.actor .nm{position:absolute;left:50%;bottom:-17px;z-index:2;transform:translateX(-50%);font:800 12px var(--display,inherit);padding:1px 6px;border-radius:6px;background:#fff;border:2px solid var(--kc);color:var(--kc);white-space:nowrap}
+.actor .av{animation:none}.actor .av .arm-r{animation:none}
+.actor .leg-l,.actor .leg-r,.actor .arm-l,.actor .arm-r{transform-box:view-box}
+.actor .leg-l{transform-origin:23px 80px}.actor .leg-r{transform-origin:37px 80px}
+.actor .arm-l{transform-origin:12px 52px}.actor .arm-r{transform-origin:47px 52px}
+.m-walk .leg-l{animation:swing .7s ease-in-out infinite alternate}.m-walk .leg-r{animation:swing .7s ease-in-out infinite alternate-reverse}
+.m-walk .arm-l{animation:swing .7s ease-in-out infinite alternate-reverse}.m-walk .arm-r{animation:swing .7s ease-in-out infinite alternate}
+.m-walk .av{animation:runbob .7s ease-in-out infinite}
+.m-run .leg-l{animation:swing2 .3s ease-in-out infinite alternate}.m-run .leg-r{animation:swing2 .3s ease-in-out infinite alternate-reverse}
+.m-run .arm-l{animation:swing2 .3s ease-in-out infinite alternate-reverse}.m-run .arm-r{animation:swing2 .3s ease-in-out infinite alternate}
+.m-run .av{animation:runbob .3s ease-in-out infinite;transform:rotate(7deg)}
+.m-jump .av{animation:hop .6s ease-out infinite}.m-jump .arm-l,.m-jump .arm-r{animation:cheer .3s ease-in-out infinite}.m-jump .arm-l{transform:scaleX(-1)}
+.m-fight .av{animation:bonk .45s ease-in-out infinite}
+.m-fight .arm-r{animation:punch .45s ease-in-out infinite}.m-fight .arm-l{animation:punch .45s ease-in-out infinite .22s}
+.m-dance .av{animation:dance .5s ease-in-out infinite}.m-dance .arm-l{animation:cheer .5s ease-in-out infinite}.m-dance .arm-r{animation:cheer .5s ease-in-out infinite .25s}
+@keyframes swing{from{transform:rotate(-28deg)}to{transform:rotate(28deg)}}
+@keyframes swing2{from{transform:rotate(-55deg)}to{transform:rotate(55deg)}}
+@keyframes runbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes bonk{0%,100%{transform:translateX(-8px) rotate(-4deg)}50%{transform:translateX(10px) rotate(6deg)}}
+@keyframes punch{0%,100%{transform:rotate(0)}50%{transform:rotate(-105deg)}}
+@keyframes dance{0%,100%{transform:rotate(-5deg) translateY(0)}50%{transform:rotate(5deg) translateY(-8px)}}
+.stage .puff{position:absolute;bottom:70px;left:calc(var(--px,50)*1%);transform:translateX(-50%) scale(0);font-size:34px;pointer-events:none}
+.stage .puff.on{animation:puff .45s ease-out infinite}
+@keyframes puff{0%{transform:translateX(-50%) scale(.3) rotate(-10deg);opacity:1}100%{transform:translateX(-50%) scale(1.3) rotate(12deg);opacity:0}}
+.stage .flag{position:absolute;bottom:34px;right:10px;font-size:28px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
+<div class="wrap stagewrap" id="stageHost" hidden></div>
 <div class="wrap" id="app"></div>
 
 <script>
@@ -364,12 +401,12 @@ function avatar(k,size=1){
   return `<svg class="av" viewBox="0 0 60 102" width="${w}" height="${h}" aria-hidden="true">
    <g transform="translate(0,12)" stroke="${E}" stroke-width="2.2" stroke-linejoin="round">
     <g fill="${L.hair}">${hairBack}</g>
-    <rect x="18" y="68" width="10" height="16" rx="2" fill="${L.skin}"/><rect x="32" y="68" width="10" height="16" rx="2" fill="${L.skin}"/>
-    <rect x="16" y="82" width="13" height="6" rx="2" fill="${L.shoe}"/><rect x="31" y="82" width="13" height="6" rx="2" fill="${L.shoe}"/>
+    <g class="leg-l"><rect x="18" y="68" width="10" height="16" rx="2" fill="${L.skin}"/><rect x="16" y="82" width="13" height="6" rx="2" fill="${L.shoe}"/></g>
+    <g class="leg-r"><rect x="32" y="68" width="10" height="16" rx="2" fill="${L.skin}"/><rect x="31" y="82" width="13" height="6" rx="2" fill="${L.shoe}"/></g>
     ${bottom}
     <rect x="17" y="40" width="26" height="24" rx="3" fill="${L.shirt}"/>
     <circle cx="25" cy="50" r="2.4" fill="${L.dec}" stroke="none"/><circle cx="35" cy="56" r="2.4" fill="${L.dec}" stroke="none"/><circle cx="33" cy="47" r="1.8" fill="${L.dec}" stroke="none"/>
-    <rect x="8" y="40" width="9" height="22" rx="3" fill="${L.skin}"/><rect x="8" y="40" width="9" height="8" rx="2" fill="${L.shirt}"/>
+    <g class="arm-l"><rect x="8" y="40" width="9" height="22" rx="3" fill="${L.skin}"/><rect x="8" y="40" width="9" height="8" rx="2" fill="${L.shirt}"/></g>
     <g class="arm-r"><rect x="43" y="40" width="9" height="22" rx="3" fill="${L.skin}"/><rect x="43" y="40" width="9" height="8" rx="2" fill="${L.shirt}"/></g>
     <rect x="11" y="2" width="38" height="36" rx="7" fill="${L.skin}"/>
     <g fill="${L.hair}">${hairFront}</g>
@@ -899,10 +936,59 @@ function animateNums(){
   });
 }
 let lastScreen="";
+
+// ---- play scene (home page): persistent node, driven by a small scene director ----
+const stageEl=(()=>{
+  const el=document.createElement("div");el.className="stage";el.setAttribute("aria-hidden","true");
+  el.innerHTML=`<div class="sun"></div><div class="cloud" style="top:16px;animation-delay:-8s"></div><div class="cloud" style="top:52px;animation-delay:-26s;transform:scale(.7)"></div><div class="ground"></div>
+    ${KIDS.map(k=>`<div class="actor m-idle" data-a="${k.id}" style="--kc:${k.color}"><span class="nm">${k.name}</span><div class="flip">${avatar(k,1)}</div></div>`).join("")}
+    <div class="puff">💥</div><div class="flag" hidden>🏁</div>`;
+  return el;
+})();
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const actor=id=>stageEl.querySelector(`[data-a="${id}"]`);
+const px={};
+function go(id,x,mode,t){const a=actor(id);const cur=px[id]??50;a.style.setProperty("--t",t+"s");a.style.setProperty("--x",x);
+  if(x!==cur) a.style.setProperty("--dir",x>cur?1:-1);
+  a.className="actor m-"+mode;px[id]=x}
+function face(id,dir){actor(id).style.setProperty("--dir",dir)}
+function puff(x,on){const p=stageEl.querySelector(".puff");p.style.setProperty("--px",x);p.classList.toggle("on",on)}
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+async function director(){
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches){[["dior",30],["diane",50],["dylan",70]].forEach(([i,x])=>go(i,x,"idle",0));return}
+  const ids=KIDS.map(k=>k.id);
+  ids.forEach((i,n)=>{px[i]=18+n*26;go(i,18+n*26,"idle",0)});
+  for(;;){
+    if(!stageEl.isConnected||document.hidden){await sleep(1000);continue}
+    // 1. walk together to the right
+    ids.forEach((i,n)=>go(i,[38,62,86][n],"walk",5));await sleep(5200);
+    // 2. run back to the left, chasing each other
+    const order=[...ids].sort(()=>Math.random()-.5);
+    order.forEach((i,n)=>go(i,[12,30,48][n],"run",2.6+n*.5));await sleep(3800);
+    // 3. race to the right, random winner
+    const slots=[84,64,44].sort(()=>Math.random()-.5);
+    stageEl.querySelector(".flag").hidden=false;
+    ids.forEach((i,n)=>go(i,slots[n],"run",1.8+(84-slots[n])/50+.6));await sleep(3600);
+    ids.forEach((i,n)=>go(i,slots[n],slots[n]===84?"jump":"idle",.1));face(ids[slots.indexOf(84)],1);await sleep(2200);
+    stageEl.querySelector(".flag").hidden=true;
+    // 4. play-fight (pillow bonk) between two, third one cheers
+    const f=[...ids].sort(()=>Math.random()-.5),[a,b,c]=f;
+    go(a,36,"walk",2);go(b,56,"walk",2);go(c,84,"walk",2);await sleep(2100);
+    face(a,1);face(b,-1);go(a,38,"fight",.1);go(b,54,"fight",.1);go(c,84,"jump",.1);face(c,-1);puff(46,true);await sleep(4800);
+    puff(46,false);
+    // 5. everybody dances
+    ids.forEach((i,n)=>go(i,[30,50,70][n],"walk",1.6));await sleep(1700);
+    ids.forEach(i=>go(i,px[i],"dance",.1));await sleep(3500);
+  }
+}
+director();
+
 const _render=render;
 render=function(){
   const list=focusables();const i=list.indexOf(document.activeElement);const same=lastScreen===view.screen+"|"+view.kid;
   _render();lastScreen=view.screen+"|"+view.kid;animateNums();
+  const host=document.getElementById("stageHost");
+  if(host){if(!stageEl.parentNode) host.appendChild(stageEl);host.hidden=view.screen!=="home"}
   const nl=focusables();
   if(same&&i>=0&&nl[i]) nl[i].focus();
   else if(!same&&nl[0]&&!(document.activeElement&&document.activeElement.tagName==="INPUT")) nl[view.screen==="kid"?1:0]?.focus();

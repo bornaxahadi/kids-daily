@@ -39,6 +39,4 @@ A simple daily points app for Diyar, Dayan and Dilan. It is a single `index.html
 
 ## Where the points are saved
 
-On this GitHub Pages site, points and settings are saved **in the browser on each device only** (localStorage). A tablet and a phone will each keep their own separate scores, and clearing browser data erases them.
-
-The original Claude artifact link syncs points across all devices. Use that link if the kids share more than one device.
+Points and settings are saved online (Google Firebase) and update live on every device that opens the website: phone, iPad, computer or TV. The girls don't need to log in. If there's no internet, taps are kept on that device and a red "Not connected to the server" message shows.

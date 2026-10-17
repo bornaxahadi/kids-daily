@@ -446,9 +446,11 @@ const fmt=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000),h=Math.floor(s/3600
 const mins=ms=>Math.floor(Math.max(0,ms)/60000);
 
 // ---- store: shared db when available, else this browser ----
-const cache={};let settings={...DEFAULTS};let db=null;let bootDone=false;
-const SYNC_LINK="https://claude.ai/artifact/AKULyWMjCBuxgdfCSHCgoZ";
-const syncWarn=()=>bootDone&&!db?`<div class="syncwarn"><b>⚠️ Not shared with other devices.</b> Points tapped here stay on this device only. For phone, iPad, TV and computer to see the same points, open the synced version: <a href="${SYNC_LINK}" target="_blank" rel="noopener">${SYNC_LINK.replace("https://","")}</a> (sign in to Claude on each device).</div>`:"";
+const cache={};let settings={...DEFAULTS};let db=null;let bootDone=false;let oldCopy=false;
+const SYNC_LINK="https://bornaxahadi.github.io/kids-daily/";
+const syncWarn=()=>{if(!bootDone||db) return "";
+  if(oldCopy) return `<div class="syncwarn"><b>⚠️ Old copy.</b> Please use the main website instead: <a href="${SYNC_LINK}" target="_blank" rel="noopener">${SYNC_LINK.replace("https://","")}</a></div>`;
+  return `<div class="syncwarn"><b>⚠️ Not connected to the server.</b> Points tapped now stay on this device only. Check the internet, then reload this page.</div>`};
 const emptyDay=(kid,date)=>({kid,date,log:[],sessions:[],runStart:null,overPenalty:false,prizeGiven:false});
 const dayId=(kid,date)=>date+"_"+kid;
 const getDay=(kid,date)=>cache[dayId(kid,date)]||emptyDay(kid,date);
@@ -1013,8 +1015,26 @@ render=function(){
   if(same&&i>=0&&nl[i]) nl[i].focus();
   else if(!same&&nl[0]&&!(document.activeElement&&document.activeElement.tagName==="INPUT")) nl[(view.screen==="kid"?1:0)+(db?1:0)]?.focus();
 };
+/* Shared online store without sign-in: one JSON document on a public blob service. Null = off. */
+const BLOB_URL=null;
+function openBlob(url){
+  let docs={},last="",pending=0,chain=Promise.resolve(),ready=false;const subs=new Set();
+  const get=async()=>{const r=await fetch(url,{headers:{Accept:"application/json"},cache:"no-store"});if(!r.ok) throw new Error("GET "+r.status);const j=await r.json();return (j&&j.docs)||{}};
+  const put=async d=>{const r=await fetch(url,{method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({docs:d,rev:Date.now()})});if(!r.ok) throw new Error("PUT "+r.status)};
+  const tell=()=>subs.forEach(f=>f());
+  const fresh=d=>{const j=JSON.stringify(d);if(j===last) return false;last=j;docs=d;return true};
+  const poll=async()=>{if(pending||document.hidden) return;try{const d=await get();if(pending) return;if(fresh(d)||!ready){ready=true;tell()}}catch(e){console.warn(e)}};
+  const mutate=fn=>{pending++;const run=chain.then(async()=>{let lastErr;for(let i=0;i<3;i++){try{const d=await get();fn(d);const cut=daysAgoKey(45);for(const k of Object.keys(d)) if(k.startsWith("days/")&&k.slice(5)<cut) delete d[k];await put(d);fresh(d);ready=true;tell();return}catch(e){lastErr=e;await new Promise(r=>setTimeout(r,400))}}throw lastErr}).finally(()=>{pending--});chain=run.catch(()=>{});return run};
+  const dayList=min=>Object.keys(docs).filter(k=>k.startsWith("days/")).map(k=>({id:k.slice(5),data:()=>docs[k]})).filter(x=>!min||x.id>=min);
+  setInterval(poll,3500);document.addEventListener("visibilitychange",()=>{if(!document.hidden) poll()});
+  return get().then(d=>{fresh(d);ready=true;return {
+    doc:path=>({set:data=>mutate(d=>{d[path]=JSON.parse(JSON.stringify(data))}),
+      onSnapshot:(cb)=>{const f=()=>cb({exists:path in docs,data:()=>docs[path]});subs.add(f);f();return()=>subs.delete(f)}}),
+    collection:c=>({where:(field,op,val)=>({onSnapshot:cb=>{const f=()=>cb({docs:dayList(val)});subs.add(f);f();return()=>subs.delete(f)}})})}});
+}
+const daysAgoKey=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 /* Shared database (Firebase Firestore). Config is filled in after the project is created; null = old behaviour. */
-const FIREBASE_CONFIG=null;
+const FIREBASE_CONFIG={apiKey:"AIzaSyAJf4yegwa1C1ACvOtQ09qkEJpu0KSIZuA",authDomain:"kidsdaily-f8f76.firebaseapp.com",projectId:"kidsdaily-f8f76",storageBucket:"kidsdaily-f8f76.firebasestorage.app",messagingSenderId:"242715081103",appId:"1:242715081103:web:438d91335d81aaea9fb3fa"};
 const loadScript=src=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error("load "+src));document.head.appendChild(s)});
 async function openFirebase(cfg){
   const base="https://www.gstatic.com/firebasejs/10.12.2/";
@@ -1027,8 +1047,11 @@ async function openFirebase(cfg){
 loadLocal();render();
 (async()=>{
   try{
+    if(BLOB_URL){
+      try{db=await openBlob(BLOB_URL);subscribe();render();return}catch(err){console.warn(err);db=null;oldCopy=!!(window.claude&&window.claude.use)}
+    }
     if(FIREBASE_CONFIG){ // shared online database: every device sees the same points
-      try{db=await openFirebase(FIREBASE_CONFIG);subscribe();render();return}catch(err){console.warn(err);db=null;showToast("No internet: saving on this device only")}
+      try{db=await openFirebase(FIREBASE_CONFIG);subscribe();render();return}catch(err){console.warn(err);db=null;oldCopy=!!(window.claude&&window.claude.use);showToast("No internet: saving on this device only")}
     }
     if(window.claude&&window.claude.use){db=await window.claude.use("db");if(db){subscribe();render()}}
   }catch(err){db=null}

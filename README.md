@@ -14,6 +14,12 @@ A simple daily points app for Dior, Diane and Dylan. It is a single `index.html`
 - Use the **Roblox time** panel: tap **Start playing** when you begin and **Stop playing** when you finish. The timer counts your daily limit (2 hours normally, 3 hours on special days). Going over the limit costs points.
 - **Progress** shows week and month charts plus Star of the Week and Star of the Month.
 
+## Look, sounds and TV
+
+- Blocky game-style look with an animated logo and a blocky character for each kid that waves, jumps when they earn points and looks sad on an oops.
+- Game sound effects for good taps, oops taps, confirms, level-ups, the target fanfare and the Roblox timer (start, stop, time's up). Turn them on or off with the 🔊 / 🔇 button.
+- **TV:** open the website in the TV browser. Use the remote's arrow keys to move between buttons, OK/Enter to press, and Back to return home. Works in landscape on big screens.
+
 ## For parents
 
 - Tap **✅ Check** on the home screen and enter the PIN to review what the kids tapped today.

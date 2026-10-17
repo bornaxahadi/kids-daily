@@ -17,11 +17,11 @@ A simple daily points app for Dior, Diane and Dylan. It is a single `index.html`
 ## For parents
 
 - Tap **✅ Check** on the home screen and enter the PIN to review what the kids tapped today.
-  - **Confirm**: the kid gets the points and **+1 trust point**.
-  - **Deny**: no points.
-  - **Change to…**: swap it to the right activity; those points count.
-  - **Confirm all** approves everything waiting.
-- Anything you tap yourself while Parent mode is open counts straight away.
+  - **✅ Confirm**: the kid gets the points and **+1 trust point 💛**.
+  - **❌ Deny**: removes it, no points.
+  - **Change…**: swap it to the right activity; those points count (no trust point).
+  - **Confirm all** approves everything waiting for one kid.
+- Kids also earn levels (🌱 Seedling up to 👑 Legend) from confirmed points, and a 🔥 streak for days in a row at the target.
 
 - Tap **Parent** and enter the PIN. **The default PIN is `1234` — change it right away** in the PIN section.
 - In Parent mode you can set the daily target, Roblox limits, mark special days, set Star prizes, mark Robux as given, and remove wrong taps (Remove buttons appear on each kid's page for 10 minutes).

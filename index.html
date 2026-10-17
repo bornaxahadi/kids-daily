@@ -388,8 +388,9 @@ const today=()=>dkey(new Date());
 const yesterday=()=>{const d=new Date();d.setDate(d.getDate()-1);return dkey(d)};
 const daysAgo=n=>{const d=new Date();d.setDate(d.getDate()-n);return dkey(d)};
 const weekStart=()=>{const d=new Date();const off=(d.getDay()+6)%7;d.setDate(d.getDate()-off);return dkey(d)}; // week starts Monday
+const START_DATE="2026-10-17"; // first day of using the app: nothing earlier is shown or counted
 const monthStart=()=>{const d=new Date();d.setDate(1);return dkey(d)};
-const rangeDays=(from)=>{const out=[];const d=new Date(from+"T12:00:00");const t=today();while(dkey(d)<=t){out.push(dkey(d));d.setDate(d.getDate()+1)}return out};
+const rangeDays=(from)=>{const out=[];const d=new Date((from<START_DATE?START_DATE:from)+"T12:00:00");const t=today();while(dkey(d)<=t){out.push(dkey(d));d.setDate(d.getDate()+1)}return out};
 const hm=ts=>{const d=new Date(ts);return pad(d.getHours())+":"+pad(d.getMinutes())};
 const fmt=ms=>{ms=Math.max(0,ms);const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),ss=s%60;return (h?h+":"+pad(m):m)+":"+pad(ss)};
 const mins=ms=>Math.floor(Math.max(0,ms)/60000);
@@ -438,7 +439,7 @@ const lifetime=kid=>Object.values(cache).filter(d=>d.kid===kid).reduce((a,d)=>a+
 function levelOf(kid){const xp=Math.max(0,lifetime(kid));let i=0;while(i+1<LEVELS.length&&xp>=LEVELS[i+1].at) i++;
   const cur=LEVELS[i],nx=LEVELS[i+1];return {cur,nx,xp,pct:nx?(xp-cur.at)/(nx.at-cur.at)*100:100,num:i+1}}
 function streak(kid){let n=0;let i=0;if(dayPts(kid,today())>=settings.target) n=1;i=1;
-  for(;i<40;i++){if(dayPts(kid,daysAgo(i))>=settings.target) n++;else break}return n}
+  for(;i<40&&daysAgo(i)>=START_DATE;i++){if(dayPts(kid,daysAgo(i))>=settings.target) n++;else break}return n}
 const gameHTML=kid=>{const L=levelOf(kid),st=streak(kid);
   return `<div class="game"><span class="lvl">${L.cur.e} Level ${L.num} · ${L.cur.n}</span><span class="fire ${st?"":"off"}">🔥 ${st}</span></div>
   <div class="meter lv"><i style="width:${L.pct}%"></i></div>
@@ -589,7 +590,7 @@ function awardsHTML(){
   const month=(()=>{const w=starOf(rangeDays(monthStart()));return `<div class="award"><div class="medal">🏆</div><div><h3>Girl of the Month</h3>
       <div class="who">${w?names(w)+` · ${w[0].t} pts`:"Nobody yet"}</div>
       <div class="hint">${esc(settings.monthPrize)} · ${new Date().toLocaleDateString("en-GB",{month:"long"})}</div></div></div>`})();
-  return `<div class="awards">${weekCard("Girl of the Week",rangeDays(weekStart()),"this week so far")}${weekCard("Last week's winner",prevWeekDays(),"Monday to Sunday")}${month}</div>`;
+  return `<div class="awards">${weekCard("Girl of the Week",rangeDays(weekStart()),"this week so far")}${prevWeekDays()[0]>=START_DATE?weekCard("Last week's winner",prevWeekDays(),"Monday to Sunday"):""}${month}</div>`;
 }
 const AREAS=[
   {id:"study",e:"📚",n:"Study",acts:["homework","study_time","reading","late_study"]},
@@ -633,7 +634,7 @@ function areaHTML(k,days,prevDays,label){
   if(tg.length) verdict+=`<div class="vd g">👍 Does most: ${fmtTop(tg)}</div>`;
   if(tb.length) verdict+=`<div class="vd b">👎 Happens most: ${fmtTop(tb)}</div>`;
   const cur=total(k.id,days),prev=total(k.id,prevDays),diff=cur-prev;
-  const cmp=`<div class="vd ${diff>=0?"g":"b"}">${diff>=0?"▲":"▼"} ${Math.abs(diff)} points ${diff>=0?"more":"fewer"} than the ${label==="this week"?"week":"month"} before (${prev} → ${cur})</div>`;
+  const cmp=prevDays[0]<START_DATE?"":`<div class="vd ${diff>=0?"g":"b"}">${diff>=0?"▲":"▼"} ${Math.abs(diff)} points ${diff>=0?"more":"fewer"} than the ${label==="this week"?"week":"month"} before (${prev} → ${cur})</div>`;
   return `<div class="areas">${rows}</div><div class="verdict">${verdict}${cmp}</div>`;
 }
 let range="week";let bonusWhy="";
@@ -642,7 +643,7 @@ const isToday=()=>viewDate===today();
 const longDate=ds=>{const d=new Date(ds+"T12:00:00");return {wd:d.toLocaleDateString("en-GB",{weekday:"long"}),dm:d.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}};
 const relLabel=ds=>ds===today()?"Today":ds===yesterday()?"Yesterday":"";
 function dateBar(){const l=longDate(viewDate);
-  return `<div class="datebar"><button class="dnav" data-day="-1" aria-label="Previous day" ${viewDate<=daysAgo(40)?"disabled":""}>◀</button>
+  return `<div class="datebar"><button class="dnav" data-day="-1" aria-label="Previous day" ${viewDate<=START_DATE?"disabled":""}>◀</button>
     <div class="dt"><div class="wd">${l.wd}</div><div class="dm">${l.dm}</div>${relLabel(viewDate)?`<div class="rel ${isToday()?"now":""}">${relLabel(viewDate)}</div>`:""}</div>
     <button class="dnav" data-day="1" aria-label="Next day" ${isToday()?"disabled":""}>▶</button>
     ${isToday()?"":`<button class="small-btn" data-day="today">Back to today</button>`}</div>`}
@@ -814,7 +815,7 @@ document.addEventListener("click",e=>{
   if(b.dataset.confirm){confirmEntry(...b.dataset.confirm.split("|"));return}
   if(b.dataset.deny){denyEntry(...b.dataset.deny.split("|"));return}
   if(b.dataset.confirmall){confirmAll(b.dataset.confirmall);return}
-  if(b.dataset.day){viewDate=b.dataset.day==="today"?today():(()=>{const d=new Date(viewDate+"T12:00:00");d.setDate(d.getDate()+Number(b.dataset.day));const n=dkey(d);return n>today()?today():n<daysAgo(40)?viewDate:n})();render();return}
+  if(b.dataset.day){viewDate=b.dataset.day==="today"?today():(()=>{const d=new Date(viewDate+"T12:00:00");d.setDate(d.getDate()+Number(b.dataset.day));const n=dkey(d);return n>today()?today():n<START_DATE?viewDate:n})();render();return}
   if(b.dataset.bonus){const[k,n]=b.dataset.bonus.split("|");giveBonus(k,Number(n));return}
   if(b.dataset.range){range=b.dataset.range;render();return}
   if(b.dataset.kid){view={screen:"kid",kid:b.dataset.kid};render();scrollTo(0,0);return}

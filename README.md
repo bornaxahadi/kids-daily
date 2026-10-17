@@ -14,7 +14,7 @@ A simple daily points app for Diyar, Dayan and Dilan. It is a single `index.html
 - Use the **Roblox time** panel: tap **Start playing** when you begin and **Stop playing** when you finish. The timer counts your daily limit (2 hours normally, 3 hours on special days). Going over the limit costs points.
 - The date and weekday are shown big at the top. Use ◀ ▶ to look back at earlier days.
 - When points change, the score counts up (green ▲) or down (red ▼).
-- **Girl of the Week:** most points Monday to Sunday wins 50 AED. On a tie, the tied kids split it. **Progress** shows week and month charts, a strong/weak breakdown per kid (study, tidying, behavior, outside, screen time), what each kid does most, and how they compare with the week or month before.
+- **Grand prize every 10 days:** the most points in each 10-day period (from 17 October) wins 50 AED. On a tie, the tied kids split it. **Progress** shows week and month charts, a strong/weak breakdown per kid (study, tidying, behavior, outside, screen time), what each kid does most, and how they compare with the week or month before.
 
 ## Look, sounds and TV
 

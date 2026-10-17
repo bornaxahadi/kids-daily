@@ -652,7 +652,10 @@ function homeHTML(){
   <div class="foot"><span>${db?"Saved for all your devices":"Saved on this device only"}</span><span style="display:flex;gap:10px">${muteBtn()}<button class="small-btn" data-go="review">✅ Check${allPending().length?` <b class="badge">${allPending().length}</b>`:""}</button><button class="small-btn" data-go="progress">📈 Progress</button><button class="small-btn" data-go="parent">👨 Parent</button></span></div>`;
 }
 const aed=n=>{const r=Math.round(n*100)/100;return (Number.isInteger(r)?r:r.toFixed(2))+" AED"};
-const prevWeekDays=()=>{const d=new Date(weekStart()+"T12:00:00");d.setDate(d.getDate()-7);const out=[];for(let i=0;i<7;i++){out.push(dkey(d));d.setDate(d.getDate()+1)}return out};
+const PERIOD=10; // grand prize every 10 days, counted from START_DATE
+const dayNo=()=>Math.round((new Date(today()+"T12:00:00")-new Date(START_DATE+"T12:00:00"))/864e5);
+const periodStart=()=>{const d=new Date(START_DATE+"T12:00:00");d.setDate(d.getDate()+Math.floor(dayNo()/PERIOD)*PERIOD);return dkey(d)};
+const prevPeriodDays=()=>{const d=new Date(periodStart()+"T12:00:00");d.setDate(d.getDate()-PERIOD);const out=[];for(let i=0;i<PERIOD;i++){out.push(dkey(d));d.setDate(d.getDate()+1)}return out};
 function awardsHTML(){
   const names=w=>w.map(x=>`<span style="color:${x.k.color}">${x.k.name}</span>`).join(" & ");
   const weekCard=(title,days,sub)=>{const w=starOf(days);
@@ -663,7 +666,7 @@ function awardsHTML(){
   const month=(()=>{const w=starOf(rangeDays(monthStart()));return `<div class="award"><div class="medal">🏆</div><div><h3>Girl of the Month</h3>
       <div class="who">${w?names(w)+` · ${w[0].t} pts`:"Nobody yet"}</div>
       <div class="hint">${esc(settings.monthPrize)} · ${new Date().toLocaleDateString("en-GB",{month:"long"})}</div></div></div>`})();
-  return `<div class="awards">${weekCard("Girl of the Week",rangeDays(weekStart()),"this week so far")}${prevWeekDays()[0]>=START_DATE?weekCard("Last week's winner",prevWeekDays(),"Monday to Sunday"):""}${month}</div>`;
+  return `<div class="awards">${weekCard("Grand prize · Day "+(dayNo()%PERIOD+1)+" of "+PERIOD,rangeDays(periodStart()),"leading now · every 10 days")}${prevPeriodDays()[0]>=START_DATE?weekCard("Last period's winner",prevPeriodDays(),prevPeriodDays()[0].slice(5)+" to "+prevPeriodDays()[PERIOD-1].slice(5)):""}${month}</div>`;
 }
 const AREAS=[
   {id:"study",e:"📚",n:"Study",acts:["homework","study_time","reading","late_study"]},
@@ -815,8 +818,8 @@ function parentHTML(){
       ${KIDS.map(k=>{const y=getDay(k.id,yesterday()),e=y.log.find(x=>x.a==="slept_early"||x.a==="slept_late");return `<div class="field"><span style="color:${k.color}">${k.icon} ${k.name}${e?` · ${e.e} ${esc(e.l)} (${e.p>0?"+":""}${e.p})`:""}</span><div class="stepper"><button data-night="${k.id}|slept_early" style="width:auto;padding:0 12px;font-size:18px">😴 Before 12 +5</button><button data-night="${k.id}|slept_late" style="width:auto;padding:0 12px;font-size:18px">🌙 After 12 −3</button></div></div>`}).join("")}
       <div class="hint">Press in the morning. The points go on the day they went to bed (yesterday). Pressing the other button switches last night's answer. Wake-up time does not matter.</div>
     </div>
-    <div class="parent"><h3>🏅 Weekly and monthly prizes</h3>
-      <div class="field"><span>Girl of the Week prize (AED)</span><div class="stepper"><button data-step="weekAed:-10">−</button><span>${settings.weekAed}</span><button data-step="weekAed:10">+</button></div></div>
+    <div class="parent"><h3>🏅 Grand prize (every 10 days) and monthly prize</h3>
+      <div class="field"><span>Grand prize every 10 days (AED)</span><div class="stepper"><button data-step="weekAed:-10">−</button><span>${settings.weekAed}</span><button data-step="weekAed:10">+</button></div></div>
       <div class="field"><span>Girl of the Month prize</span><input class="prize-in" id="monthPrize" maxlength="60" value="${esc(settings.monthPrize)}"></div>
     </div>
     <div class="parent"><h3>🎁 Prizes from yesterday</h3>

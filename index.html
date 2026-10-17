@@ -485,7 +485,11 @@ function subscribe(){
   subDate=today();
   unsubs.push(db.doc("settings/main").onSnapshot(s=>{if(s.exists){settings={...DEFAULTS,...s.data()};render()}},e=>console.warn(e)));
   unsubs.push(db.collection("days").where("date",">=",daysAgo(40)).onSnapshot(q=>{
-    for(const doc of q.docs){cache[doc.id]=JSON.parse(JSON.stringify(doc.data()))}
+    const seen=new Set();
+    for(const doc of q.docs){seen.add(doc.id);cache[doc.id]=JSON.parse(JSON.stringify(doc.data()))}
+    // the server is the truth: drop old copies this device still remembers (e.g. after a reset)
+    const from=daysAgo(40);
+    for(const id of Object.keys(cache)){if(!seen.has(id)&&id.slice(0,10)>=from){delete cache[id];try{localStorage.removeItem("kd:days/"+id)}catch(e){}}}
     render();
   },e=>console.warn(e)));
 }

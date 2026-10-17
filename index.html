@@ -10,7 +10,7 @@
   --bg:#f3f6fb; --surface:#ffffff; --ink:#1d2433; --muted:#5f6b80; --line:#dde3ee;
   --good:#1f9d63; --good-soft:#e2f6ec; --bad:#d9443a; --bad-soft:#fde6e3;
   --gold:#f2a516; --gold-soft:#fff2d6;
-  --dior:#e2508f; --diane:#7a5ce6; --dylan:#1a9bd7;
+  --dior:#2a7de1; --diane:#e0a100; --dylan:#c14fd6;
   --display:"Titan One","Fredoka","Baloo 2","Trebuchet MS",system-ui,sans-serif;
   --body:"Nunito","Segoe UI",system-ui,sans-serif;
   --r:12px; --edge:#1d2433;
@@ -19,12 +19,12 @@
   --bg:#141824; --surface:#1e2433; --ink:#eef1f7; --muted:#a3adc2; --line:#2e3547;
   --good:#3cc584; --good-soft:#173628; --bad:#ff6b5e; --bad-soft:#3b1f1d;
   --gold:#ffbf3c; --gold-soft:#3a2f14;
-  --dior:#ff6fab; --diane:#9d85ff; --dylan:#3fb8f0; --edge:#05070c; color-scheme:dark}}
+  --dior:#5aa2ff; --diane:#ffd34d; --dylan:#e47bf2; --edge:#05070c; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#141824; --surface:#1e2433; --ink:#eef1f7; --muted:#a3adc2; --line:#2e3547;
   --good:#3cc584; --good-soft:#173628; --bad:#ff6b5e; --bad-soft:#3b1f1d;
   --gold:#ffbf3c; --gold-soft:#3a2f14;
-  --dior:#ff6fab; --diane:#9d85ff; --dylan:#3fb8f0; --edge:#05070c; color-scheme:dark}
+  --dior:#5aa2ff; --diane:#ffd34d; --dylan:#e47bf2; --edge:#05070c; color-scheme:dark}
 *{box-sizing:border-box}
 html,body{min-height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;
@@ -158,6 +158,9 @@ h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
 .game{display:flex;justify-content:space-between;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:20px}
 .fire{background:var(--gold-soft);padding:4px 12px;border-radius:999px}
 .fire.off{opacity:.45}
+.fire{white-space:nowrap;align-self:center;line-height:1.2}
+.game{flex-wrap:wrap}
+.logo{margin-bottom:10px}
 .meter.lv{height:12px}
 .meter.lv i{background:var(--gold)}
 /* Blocky building-brick look */
@@ -169,7 +172,7 @@ body{background-color:var(--bg);background-image:linear-gradient(var(--grid) 2px
 .kid-card{box-shadow:0 8px 0 var(--edge)}
 .kid-card:active{box-shadow:0 2px 0 var(--edge)}
 .kid-card .face{border-radius:10px;width:76px;height:84px;background:var(--kc);border:3px solid var(--edge);overflow:hidden;align-items:end}
-.kid-card .face .av{margin-top:4px}
+.kid-card .face .av{margin-top:2px}
 .tile{border-radius:10px;box-shadow:0 6px 0 var(--edge)}
 .tile:active{transform:translateY(5px);box-shadow:0 1px 0 var(--edge)}
 .tile.done{box-shadow:none}
@@ -193,7 +196,7 @@ h1,h2,h3,.big,.clock,.who{letter-spacing:.02em}
 @keyframes wob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6px) rotate(-3deg)}}
 .av{display:block;flex:none;animation:bob 1.8s ease-in-out infinite;transform-origin:50% 100%}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.av .arm-r{transform-origin:52px 29px;animation:wave 1.8s ease-in-out infinite}
+.av .arm-r{transform-origin:47px 52px;animation:wave 1.8s ease-in-out infinite}
 @keyframes wave{0%,60%,100%{transform:rotate(0)}70%{transform:rotate(-150deg)}80%{transform:rotate(-120deg)}90%{transform:rotate(-150deg)}}
 .av .frown{display:none}
 .av.hop{animation:hop .7s ease-out 2}
@@ -281,20 +284,50 @@ const muteBtn=()=>`<button class="small-btn" data-mute="1" aria-label="Sound">${
 
 // ---- characters ----
 function avatar(k,size=1){
-  const w=60*size,h=92*size;
-  return `<svg class="av" viewBox="0 0 60 92" width="${w}" height="${h}" aria-hidden="true">
-   <g class="body" stroke="#1d2433" stroke-width="2.5" stroke-linejoin="round">
-    <rect x="14" y="56" width="16" height="30" rx="2" fill="${k.pants}"/><rect x="30" y="56" width="16" height="30" rx="2" fill="${k.pants}"/>
-    <rect x="13" y="27" width="34" height="30" rx="2" fill="${k.shirt}"/>
-    <rect x="3" y="27" width="10" height="27" rx="2" fill="#f6d04d"/>
-    <g class="arm-r"><rect x="47" y="27" width="10" height="27" rx="2" fill="#f6d04d"/></g>
-    <rect x="17" y="3" width="26" height="24" rx="3" fill="#f6d04d"/>
-    <rect x="16" y="1" width="28" height="8" rx="2" fill="${k.hair}"/>
-    ${k.long?`<rect x="14" y="4" width="5" height="20" rx="2" fill="${k.hair}"/><rect x="41" y="4" width="5" height="20" rx="2" fill="${k.hair}"/>`:""}
+  const w=60*size,h=102*size;
+  const L={
+    dior:{skin:"#c68a5a",hair:"#25140c",shirt:"#4f95ea",dec:"#ffffff",bottom:"shorts",bc:"#1f3f7a",shoe:"#ffffff"},
+    diane:{skin:"#e2ac7e",hair:"#5a3522",shirt:"#ffd23f",dec:"#f28a1d",bottom:"skirt",bc:"#5b83b5",shoe:"#ffffff"},
+    dylan:{skin:"#f1cba6",hair:"#3a2418",shirt:"#b57be6",dec:"#ff8ac4",bottom:"skirt",bc:"#ff9fcf",shoe:"#ffffff"}
+  }[k.id];
+  const E="#1d2433";
+  let hairBack="",hairFront="",extra="";
+  if(k.id==="dior"){
+    hairBack=`<circle cx="22" cy="-2" r="8"/><circle cx="30" cy="-6" r="9"/><circle cx="38" cy="-2" r="8"/><circle cx="10" cy="12" r="5"/><circle cx="50" cy="12" r="5"/><circle cx="9" cy="22" r="4"/><circle cx="51" cy="22" r="4"/>`;
+    hairFront=`<rect x="10" y="0" width="40" height="11" rx="4"/><circle cx="16" cy="12" r="4"/><circle cx="25" cy="12" r="4"/><circle cx="35" cy="12" r="4"/><circle cx="44" cy="12" r="4"/>`;
+    extra=`<rect x="22" y="3" width="16" height="5" rx="2" fill="#3a6fd8" stroke="${E}" stroke-width="2"/>`;
+  }else if(k.id==="diane"){
+    hairBack=`<rect x="7" y="4" width="9" height="38" rx="3"/><rect x="44" y="4" width="9" height="38" rx="3"/><circle cx="11" cy="43" r="5"/><circle cx="49" cy="43" r="5"/>`;
+    hairFront=`<rect x="10" y="0" width="40" height="12" rx="4"/><rect x="10" y="6" width="9" height="12" rx="2"/><rect x="41" y="6" width="9" height="12" rx="2"/>`;
+    extra=`<g fill="none" stroke="#6b2a1a" stroke-width="2.4"><rect x="16" y="14" width="12" height="11" rx="4"/><rect x="32" y="14" width="12" height="11" rx="4"/><path d="M28 19h4"/></g>`;
+  }else{
+    hairBack=`<rect x="7" y="4" width="8" height="38" rx="3"/><rect x="45" y="4" width="8" height="38" rx="3"/>`;
+    hairFront=`<rect x="10" y="0" width="40" height="11" rx="4"/><rect x="12" y="8" width="36" height="7" rx="2"/>`;
+  }
+  const bottom=L.bottom==="shorts"
+    ?`<rect x="18" y="64" width="11" height="12" rx="1" fill="${L.bc}"/><rect x="31" y="64" width="11" height="12" rx="1" fill="${L.bc}"/>`
+    :`<path d="M16 62 H44 L47 76 H13 Z" fill="${L.bc}"/>`;
+  return `<svg class="av" viewBox="0 0 60 102" width="${w}" height="${h}" aria-hidden="true">
+   <g transform="translate(0,12)" stroke="${E}" stroke-width="2.2" stroke-linejoin="round">
+    <g fill="${L.hair}">${hairBack}</g>
+    <rect x="18" y="68" width="10" height="16" rx="2" fill="${L.skin}"/><rect x="32" y="68" width="10" height="16" rx="2" fill="${L.skin}"/>
+    <rect x="16" y="82" width="13" height="6" rx="2" fill="${L.shoe}"/><rect x="31" y="82" width="13" height="6" rx="2" fill="${L.shoe}"/>
+    ${bottom}
+    <rect x="17" y="40" width="26" height="24" rx="3" fill="${L.shirt}"/>
+    <circle cx="25" cy="50" r="2.4" fill="${L.dec}" stroke="none"/><circle cx="35" cy="56" r="2.4" fill="${L.dec}" stroke="none"/><circle cx="33" cy="47" r="1.8" fill="${L.dec}" stroke="none"/>
+    <rect x="8" y="40" width="9" height="22" rx="3" fill="${L.skin}"/><rect x="8" y="40" width="9" height="8" rx="2" fill="${L.shirt}"/>
+    <g class="arm-r"><rect x="43" y="40" width="9" height="22" rx="3" fill="${L.skin}"/><rect x="43" y="40" width="9" height="8" rx="2" fill="${L.shirt}"/></g>
+    <rect x="11" y="2" width="38" height="36" rx="7" fill="${L.skin}"/>
+    <g fill="${L.hair}">${hairFront}</g>
+    ${extra}
    </g>
-   <rect x="23" y="13" width="4" height="5" fill="#1d2433"/><rect x="33" y="13" width="4" height="5" fill="#1d2433"/>
-   <path class="smile" d="M24 21 Q30 26 36 21" stroke="#1d2433" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-   <path class="frown" d="M24 24 Q30 19 36 24" stroke="#1d2433" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+   <g transform="translate(0,12)">
+    <circle cx="22" cy="24" r="2.8" fill="${E}"/><circle cx="38" cy="24" r="2.8" fill="${E}"/>
+    <circle cx="23" cy="23" r="0.9" fill="#fff"/><circle cx="39" cy="23" r="0.9" fill="#fff"/>
+    <ellipse cx="17" cy="30" rx="3" ry="2" fill="#ff8aa8" opacity=".55"/><ellipse cx="43" cy="30" rx="3" ry="2" fill="#ff8aa8" opacity=".55"/>
+    <path class="smile" d="M25 31 Q30 36 35 31" stroke="${E}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <path class="frown" d="M25 34 Q30 29 35 34" stroke="${E}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+   </g>
   </svg>`}
 function logoHTML(){
   const cols=["var(--dior)","var(--gold)","var(--dylan)","var(--good)","var(--diane)","var(--bad)","var(--dior)","var(--gold)","var(--dylan)","var(--good)"];

@@ -236,6 +236,19 @@ button:focus{transform:scale(1.04);z-index:2;position:relative}
 .delta{margin-left:12px;padding:2px 12px;border-radius:8px;border:2px solid var(--edge);font-family:var(--display);font-size:26px;vertical-align:middle;animation:dl 1.8s ease-out forwards}
 .delta.g{background:var(--good-soft);color:var(--good)}.delta.b{background:var(--bad-soft);color:var(--bad)}
 @keyframes dl{0%{opacity:0;transform:translateY(8px)}15%{opacity:1;transform:translateY(0)}80%{opacity:1}100%{opacity:0}}
+.sub{font-family:var(--display);font-size:20px;margin:10px 0 2px;font-weight:400}
+.areas{display:flex;flex-direction:column;gap:8px}
+.arow{display:grid;grid-template-columns:minmax(120px,170px) 1fr auto;gap:10px;align-items:center;font-weight:800}
+.abar{display:grid;grid-template-columns:1fr 1fr;height:22px;background:var(--bg);border:2px solid var(--edge);border-radius:6px;overflow:hidden}
+.abar .neg{display:flex;justify-content:flex-end;border-right:2px solid var(--edge)}
+.abar i{display:block;height:100%}
+.abar .neg i{background:var(--bad)}.abar .pos i{background:var(--good)}
+.av2{font-variant-numeric:tabular-nums;white-space:nowrap}
+.av2 .g{color:var(--good)}.av2 .b{color:var(--bad)}
+.verdict{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.vd{padding:8px 12px;border-radius:8px;border:2px solid var(--edge);font-weight:700}
+.vd.g{background:var(--good-soft)}.vd.b{background:var(--bad-soft)}.vd.w{background:var(--gold-soft)}
+@media (max-width:600px){.arow{grid-template-columns:1fr auto}.arow .abar{grid-column:1/-1;order:3}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -566,6 +579,51 @@ function awardsHTML(){
       <div class="hint">${esc(settings.monthPrize)} · ${new Date().toLocaleDateString("en-GB",{month:"long"})}</div></div></div>`})();
   return `<div class="awards">${weekCard("Girl of the Week",rangeDays(weekStart()),"this week so far")}${weekCard("Last week's winner",prevWeekDays(),"Monday to Sunday")}${month}</div>`;
 }
+const AREAS=[
+  {id:"study",e:"📚",n:"Study",acts:["homework","study_time","reading","late_study"]},
+  {id:"tidy",e:"🧹",n:"Tidying up",acts:["clean_eat","clean_study","clean_play","garbage","bedroom","home","mess","throw_garbage","messy_room"]},
+  {id:"behave",e:"😇",n:"Behavior",acts:["listened","no_fight","no_cry","fight","cry","not_listen"]},
+  {id:"active",e:"🌳",n:"Outside & slippers",acts:["outside","slippers","no_slippers"]},
+  {id:"screen",e:"📺",n:"Screen time",acts:["cartoons","roblox_over"]},
+  {id:"bonus",e:"🌟",n:"Bonus",acts:["bonus"]}];
+const areaOf=aid=>AREAS.find(a=>a.acts.includes(aid));
+function areaStats(kid,days){
+  const st={};AREAS.forEach(a=>st[a.id]={g:0,b:0,n:0});
+  for(const d of days){const doc=cache[dayId(kid,d)];if(!doc) continue;
+    for(const e of doc.log){if(!isOk(e)) continue;const a=areaOf(e.a);if(!a) continue;
+      if(e.p>0) st[a.id].g+=e.p;else st[a.id].b+=-e.p;st[a.id].n++}}
+  return st;
+}
+function topActs(kid,days,good){
+  const m={};
+  for(const d of days){const doc=cache[dayId(kid,d)];if(!doc) continue;for(const e of doc.log){if(!isOk(e)||e.a==="bonus"||(e.p>0)!==good) continue;m[e.a]=m[e.a]||{e:e.e,l:e.l.replace(" (auto)",""),c:0};m[e.a].c++}}
+  return Object.values(m).sort((a,b)=>b.c-a.c).slice(0,3);
+}
+function areaHTML(k,days,prevDays,label){
+  const st=areaStats(k.id,days);
+  const max=Math.max(1,...AREAS.map(a=>Math.max(st[a.id].g,st[a.id].b)));
+  const used=AREAS.filter(a=>st[a.id].n>0);
+  const net=a=>st[a.id].g-st[a.id].b;
+  const rows=AREAS.map(a=>`<div class="arow"><span class="al">${a.e} ${a.n}</span>
+    <div class="abar"><div class="neg"><i style="width:${st[a.id].b/max*100}%"></i></div><div class="pos"><i style="width:${st[a.id].g/max*100}%"></i></div></div>
+    <span class="av2"><b class="g">+${st[a.id].g}</b> <b class="b">−${st[a.id].b}</b></span></div>`).join("");
+  let verdict="";
+  if(used.length){
+    const best=[...used].sort((x,y)=>net(y)-net(x))[0],worst=[...used].sort((x,y)=>net(x)-net(y))[0];
+    const goodLine=net(best)>0?`<div class="vd g">💪 Best at <b>${best.n}</b> (${net(best)>0?"+":""}${net(best)} points)</div>`:"";
+    const badLine=(net(worst)<0||st[worst.id].b>0)&&worst.id!==best.id||net(worst)<0?`<div class="vd b">⚠️ Needs work: <b>${worst.n}</b> (${st[worst.id].b} points lost${st[worst.id].g?`, ${st[worst.id].g} earned`:""})</div>`:"";
+    const untouched=AREAS.filter(a=>a.id!=="bonus"&&a.id!=="screen"&&st[a.id].g===0);
+    const noneLine=untouched.length?`<div class="vd w">🔎 Nothing earned yet in: ${untouched.map(a=>a.e+" "+a.n).join(", ")}</div>`:"";
+    verdict=goodLine+badLine+noneLine;
+  }else verdict=`<div class="vd w">No confirmed activity ${label} yet.</div>`;
+  const tg=topActs(k.id,days,true),tb=topActs(k.id,days,false);
+  const fmtTop=l=>l.map(x=>`${x.e} ${esc(x.l)} ×${x.c}`).join(" · ");
+  if(tg.length) verdict+=`<div class="vd g">👍 Does most: ${fmtTop(tg)}</div>`;
+  if(tb.length) verdict+=`<div class="vd b">👎 Happens most: ${fmtTop(tb)}</div>`;
+  const cur=total(k.id,days),prev=total(k.id,prevDays),diff=cur-prev;
+  const cmp=`<div class="vd ${diff>=0?"g":"b"}">${diff>=0?"▲":"▼"} ${Math.abs(diff)} points ${diff>=0?"more":"fewer"} than the ${label==="this week"?"week":"month"} before (${prev} → ${cur})</div>`;
+  return `<div class="areas">${rows}</div><div class="verdict">${verdict}${cmp}</div>`;
+}
 let range="week";let bonusWhy="";
 let viewDate=today();
 const isToday=()=>viewDate===today();
@@ -578,12 +636,15 @@ function dateBar(){const l=longDate(viewDate);
     ${isToday()?"":`<button class="small-btn" data-day="today">Back to today</button>`}</div>`}
 function progressHTML(){
   const days=range==="week"?rangeDays(daysAgo(6)):rangeDays(daysAgo(29));
+  const span=range==="week"?7:30;
+  const prevDays=days.map(d=>{const x=new Date(d+"T12:00:00");x.setDate(x.getDate()-span);return dkey(x)});
+  const label=range==="week"?"this week":"this month";
   return `<div class="kid-head"><button class="back" data-go="home" aria-label="Back">←</button><h1>Progress 📈</h1></div>
     <div class="tabs"><button class="${range==="week"?"on":""}" data-range="week">1 week</button><button class="${range==="month"?"on":""}" data-range="month">1 month</button></div>
     ${awardsHTML()}
     ${KIDS.map(k=>{const tot=total(k.id,days);const hit=days.filter(d=>dayPts(k.id,d)>=settings.target).length;
       return `<div class="trend" style="--kc:${k.color}"><div class="trend-head"><h3>${k.name}</h3>
-        <span class="tot">${tot} pts · 🎯 ${hit} day${hit===1?"":"s"}</span></div>${trendSVG(k.id,days,k.color)}</div>`}).join("")}
+        <span class="tot">${tot} pts · 🎯 ${hit} day${hit===1?"":"s"}</span></div>${trendSVG(k.id,days,k.color)}<h4 class="sub">Where ${k.name} is strong or weak ${range==="week"?"(last 7 days)":"(last 30 days)"}</h4>${areaHTML(k,days,prevDays,label)}</div>`}).join("")}
     <div class="hint">Green line = going up. Red line = going down. Gold dot = target reached that day.</div>`;
 }
 function tileHTML(a,kind,day){const done=a.once&&day.log.some(x=>x.a===a.id);const lock=!isToday()&&!parentOn();return `<button class="tile ${kind}${done||lock?" done":""}" data-act="${a.id}" ${done||lock?"disabled":""}><span class="e">${a.e}</span><span>${esc(a.l)}</span><span class="p">${done?"Done ✓":(a.p>0?"+":"")+a.p}</span></button>`}

@@ -236,6 +236,7 @@ button:focus{transform:scale(1.04);z-index:2;position:relative}
 .meter{position:relative}
 .meter i{position:absolute;left:0;top:0}
 .meter i.pend{opacity:.35}
+.wchip{display:inline-block;background:#ffd84a;color:#4a3500;font-weight:800;font-size:15px;border-radius:999px;padding:4px 12px;margin:2px 0 6px}
 .num{display:inline-block;font-variant-numeric:tabular-nums;min-width:1ch}
 .num.up{color:var(--good);animation:numup .9s ease-out}
 .num.down{color:var(--bad);animation:numdown .9s ease-out}
@@ -641,11 +642,13 @@ function homeHTML(){
   ${allPending().length?`<button class="waitbar" data-go="review"><span class="wb-n">${allPending().length}</span><span>⏳ waiting for Dad's OK<br><small>Dad: tap here, type the PIN, then press ✅</small></span></button>`:""}
   <div class="kids">${KIDS.map(k=>{
     const d=getDay(k.id,viewDate),pts=points(d),pct=Math.max(0,Math.min(100,pts/settings.target*100));
+    const wn=pendingList(d).length,wp=projected(d)-pts,ppct=Math.max(0,Math.min(100,projected(d)/settings.target*100));
     const pr=earnedPrize(k.id);
     return `<button class="kid-card" style="--kc:${k.color}" data-kid="${k.id}">
       <div class="row"><div class="face">${avatar(k,0.8)}</div><h2>${k.name}</h2></div>
-      <div class="stat"><span>Points</span><b>${pts} / ${settings.target}</b></div>
-      <div class="meter"><i style="width:${pct}%"></i></div>
+      ${wn?`<div class="wchip">⏳ ${wn} waiting for Dad</div>`:""}
+      <div class="stat"><span>Points</span><b>${wn?`${pts} ✅ ${wp<0?"− "+(-wp):"+ "+wp} ⏳`:pts} / ${settings.target}</b></div>
+      <div class="meter"><i class="pend" style="width:${ppct}%"></i><i style="width:${pct}%"></i></div>
       ${chips(d)}
       ${gameHTML(k.id)}
       <div class="stat"><span>💛 Trust</span><b>${trust(k.id)}</b></div>

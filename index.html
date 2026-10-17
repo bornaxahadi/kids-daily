@@ -261,13 +261,13 @@ button:focus{transform:scale(1.04);z-index:2;position:relative}
 
 /* Play scene: the three characters run, walk, jump and play-fight on a blocky baseplate. */
 .stagewrap[hidden]{display:none}.stagewrap{padding-bottom:0;margin-bottom:-6px}.stagewrap:not([hidden]) .stage{margin-bottom:6px}
-.stage{position:relative;height:clamp(150px,19vw,180px);border:3px solid var(--edge,#1d2433);border-radius:var(--r);overflow:hidden;background:linear-gradient(#8fd0ff,#dff3ff 70%);box-shadow:0 5px 0 var(--edge,#1d2433)}
+.stage{position:relative;height:clamp(300px,62vw,460px);border:3px solid var(--edge,#1d2433);border-radius:var(--r);overflow:hidden;background:linear-gradient(#8fd0ff,#dff3ff 70%);box-shadow:0 5px 0 var(--edge,#1d2433)}
 .stage .cloud{position:absolute;height:18px;width:64px;background:#fff;border-radius:4px;box-shadow:18px -10px 0 #fff,40px 0 0 #fff;opacity:.9;animation:cloud 40s linear infinite}
 @keyframes cloud{from{transform:translateX(-120px)}to{transform:translateX(110vw)}}
 .stage .sun{position:absolute;right:18px;top:12px;width:34px;height:34px;background:#ffd23f;border:3px solid #e0a100;border-radius:6px;animation:wob 4s ease-in-out infinite}
 .stage .ground{position:absolute;left:0;right:0;bottom:0;height:34px;background:
   repeating-linear-gradient(90deg,rgba(0,0,0,.12) 0 2px,transparent 2px 36px),#5fae55;border-top:5px solid #3f8a3a}
-.actor{position:absolute;bottom:20px;left:calc(var(--x,50)*1%);transform:translateX(-50%);transition:left var(--t,3s) linear;width:62px;text-align:center}
+.actor{position:absolute;bottom:20px;zoom:1;left:calc(var(--x,50)*1%);transform:translateX(-50%);transition:left var(--t,3s) linear;width:62px;text-align:center}
 .actor .flip{transform:scaleX(var(--dir,1))}
 .actor .nm{position:absolute;left:50%;bottom:-17px;z-index:2;transform:translateX(-50%);font:800 12px var(--display,inherit);padding:1px 6px;border-radius:6px;background:#fff;border:2px solid var(--kc);color:var(--kc);white-space:nowrap}
 .actor .av{animation:none}.actor .av .arm-r{animation:none}
@@ -294,6 +294,27 @@ button:focus{transform:scale(1.04);z-index:2;position:relative}
 .stage .puff.on{animation:puff .45s ease-out infinite}
 @keyframes puff{0%{transform:translateX(-50%) scale(.3) rotate(-10deg);opacity:1}100%{transform:translateX(-50%) scale(1.3) rotate(12deg);opacity:0}}
 .stage .flag{position:absolute;bottom:34px;right:10px;font-size:28px}
+/* Tap game on the play scene: day = butterflies and flowers, night = Halloween ghosts. */
+.stage{user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.stage .sun{transition:opacity 1.5s;z-index:0}.stage.night .sun{opacity:0}
+.stage .dark{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity 2s;background:radial-gradient(ellipse at 80% 20%,rgba(60,40,120,.55),rgba(8,4,32,.86) 70%)}
+.stage.night .dark{opacity:1}
+.stage .moon{position:absolute;right:22px;top:8px;font-size:clamp(34px,7vw,56px);z-index:1;opacity:0;transition:opacity 2s;pointer-events:none;filter:drop-shadow(0 0 10px #ffe9a8)}
+.stage.night .moon{opacity:1}
+.stage .actor{z-index:2}.stage .ground{z-index:0}
+.stage .crit{position:absolute;z-index:3;font-size:clamp(42px,8vw,60px);line-height:1;padding:12px;cursor:pointer;left:-12%;animation:flyr var(--d,9s) linear forwards}
+.stage .crit span{display:block;animation:bob 1.1s ease-in-out infinite alternate}
+.stage .crit.spook span{filter:drop-shadow(0 0 8px #b388ff);animation-duration:.8s}
+.stage .crit:active span{transform:scale(1.3)}
+@keyframes flyr{from{left:-12%}to{left:104%}}
+@keyframes flyl{from{left:104%}to{left:-12%}}
+@keyframes bob{from{transform:translateY(-10px) rotate(-8deg)}to{transform:translateY(10px) rotate(8deg)}}
+.stage .bit{position:absolute;z-index:4;font-size:20px;pointer-events:none;animation:bit .7s ease-out forwards}
+@keyframes bit{from{transform:translate(0,0) scale(1);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(.4);opacity:0}}
+.stage .say{position:absolute;z-index:5;transform:translateX(-50%);font:900 24px var(--display,inherit);color:#fff;text-shadow:0 2px 0 #1d2433,0 0 8px #1d2433;pointer-events:none;animation:say 1s ease-out forwards;white-space:nowrap}
+@keyframes say{from{transform:translate(-50%,0) scale(.6);opacity:1}to{transform:translate(-50%,-34px) scale(1.15);opacity:0}}
+.stage .gscore{position:absolute;left:8px;top:6px;z-index:5;font:900 20px var(--display,inherit);background:rgba(255,255,255,.9);border:2px solid var(--edge,#1d2433);border-radius:999px;padding:1px 10px;pointer-events:none}
+.stage .gscore.pulse{animation:wob .4s}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -373,6 +394,11 @@ function sfx(name){
     else if(name==="start") seq([392,523,659],"triangle",0.2,0.08,0.14);
     else if(name==="stop") seq([659,523,392],"triangle",0.2,0.08,0.14);
     else if(name==="alarm") seq([880,660,880,660],"square",0.1,0.15,0.12);
+    else if(name==="chime") seq([784,988,1319],"sine",0.16,0.06,0.16);
+    else if(name==="pip"){tone(600,0,0.08,"triangle",0.1,900)}
+    else if(name==="boo"){tone(330,0,0.4,"sawtooth",0.13,110);tone(140,0.05,0.35,"square",0.08,70)}
+    else if(name==="creepy"){tone(110,0,1.2,"sawtooth",0.07,82);tone(116,0.1,1.1,"sawtooth",0.05,78);tone(988,0.5,0.25,"sine",0.05,740)}
+    else if(name==="morning") seq([523,659,784,1047],"triangle",0.14,0.1,0.18);
     else tone(520,0,0.05,"triangle",0.12);
   }catch(e){}
 }
@@ -1010,6 +1036,58 @@ async function director(){
   }
 }
 director();
+
+// ---- tap game on the play scene: lives only in memory, never touches points or sync ----
+(function(){
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  const DAY_MS=22000,NIGHT_MS=18000;
+  const G={n:0,night:false,items:0};
+  stageEl.insertAdjacentHTML("afterbegin",'<div class="dark"></div><div class="moon">🌙</div><div class="gscore">⭐ <b>0</b></div>');
+  const NICE=["🦋","🌸","🐦","🐝","🌼","🦋"],SPOOK=["👻","🦇","🕷️","🎃","💀","👻"];
+  const visible=()=>stageEl.offsetParent&&!document.hidden;
+  const kill=d=>{if(d._gone)return;d._gone=1;d.remove();G.items--};
+  function spawn(){
+    if(!visible()||G.items>=7) return;
+    const spook=G.night,e=pick(spook?SPOOK:NICE),d=document.createElement("div"),dur=7+Math.random()*6;
+    d.className="crit "+(spook?"spook":"nice");d.dataset.e=e;d.innerHTML=`<span>${e}</span>`;
+    d.style.top=(6+Math.random()*48)+"%";d.style.setProperty("--d",dur+"s");
+    if(Math.random()<.5) d.style.animationName="flyl";
+    stageEl.appendChild(d);G.items++;setTimeout(()=>kill(d),dur*1000+300);
+  }
+  function at(ev){const r=stageEl.getBoundingClientRect();return [ev.clientX-r.left,ev.clientY-r.top]}
+  function burst(x,y,bits){
+    for(let i=0;i<7;i++){const b=document.createElement("div");b.className="bit";b.textContent=pick(bits);
+      const a=Math.PI*2*i/7+Math.random()*.6,r=30+Math.random()*30;
+      b.style.left=x+"px";b.style.top=y+"px";b.style.setProperty("--dx",Math.cos(a)*r+"px");b.style.setProperty("--dy",Math.sin(a)*r+"px");
+      stageEl.appendChild(b);setTimeout(()=>b.remove(),750)}
+  }
+  function say(x,y,t){const s=document.createElement("div");s.className="say";s.textContent=t;s.style.left=x+"px";s.style.top=y+"px";stageEl.appendChild(s);setTimeout(()=>s.remove(),1000)}
+  function score(){
+    G.n++;const g=stageEl.querySelector(".gscore");g.querySelector("b").textContent=G.n;
+    g.classList.remove("pulse");void g.offsetWidth;g.classList.add("pulse");
+    if(G.n%10===0){sfx("fanfare");say(stageEl.clientWidth/2,50,"⭐ "+G.n+"!")}
+  }
+  stageEl.addEventListener("pointerdown",ev=>{
+    const [x,y]=at(ev),c=ev.target.closest(".crit"),a=ev.target.closest(".actor");
+    if(c){
+      const spook=c.classList.contains("spook");
+      burst(x,y,spook?["💥","👻","🟣","✨"]:["✨","🌸","💛","🌼"]);
+      say(x,y-10,spook?pick(["BOO!","BAM!","POOF!"]):pick(["Yay!","Pop!","Wow!"]));
+      sfx(spook?"boo":"chime");kill(c);score();
+    }else if(a){
+      say(x,y-20,G.night?"😱":"💛");sfx(G.night?"boo":"pip");
+    }else{burst(x,y,G.night?["✨","🟣"]:["✨","💫"]);sfx("pip")}
+  });
+  (async function loop(){
+    for(;;){
+      G.night=false;stageEl.classList.remove("night");
+      for(let t=0;t<DAY_MS;t+=800){spawn();await sleep(800)}
+      G.night=true;stageEl.classList.add("night");if(visible()) sfx("creepy");
+      for(let t=0;t<NIGHT_MS;t+=650){spawn();await sleep(650)}
+      if(visible()) sfx("morning");
+    }
+  })();
+})();
 
 const _render=render;
 render=function(){

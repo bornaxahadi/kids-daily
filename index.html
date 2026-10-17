@@ -136,7 +136,8 @@ h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
 .party p{font-size:22px;font-weight:800;margin:0}
 .party button{background:var(--good);color:#fff;border-radius:16px;padding:16px;font-family:var(--display);font-size:26px;font-weight:700}
 .awards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-.savebtn{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;margin:6px 0 14px;padding:16px;border:3px solid var(--edge,#1d2433);border-radius:var(--r);background:var(--good);color:#fff;font:inherit;font-weight:800;font-size:22px;box-shadow:0 5px 0 var(--edge,#1d2433);cursor:pointer}.savebtn small{font-size:14px;font-weight:700;opacity:.95}.savebtn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--edge,#1d2433)}
+#saveDock{position:sticky;bottom:0;z-index:50;display:flex;justify-content:center;padding:10px 16px calc(10px + env(safe-area-inset-bottom));pointer-events:none}#saveDock[hidden]{display:none}#saveDock .savebtn{pointer-events:auto;max-width:520px;margin:0}
+.savebtn{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;margin:6px 0 14px;padding:12px;border:3px solid var(--edge,#1d2433);border-radius:var(--r);background:var(--good);color:#fff;font:inherit;font-weight:800;font-size:22px;box-shadow:0 5px 0 var(--edge,#1d2433);cursor:pointer}.savebtn small{font-size:14px;font-weight:700;opacity:.95}.savebtn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--edge,#1d2433)}
 .syncwarn{background:var(--bad-soft);border:3px solid var(--bad);border-radius:var(--r);padding:12px 16px;margin:0 0 14px;font-weight:700;font-size:15px;line-height:1.35}.syncwarn a{color:var(--ink);word-break:break-all}
 .waitbar{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 14px;padding:14px 18px;border:3px solid var(--gold);border-radius:var(--r);background:var(--gold-soft);color:var(--ink);font:inherit;font-weight:800;font-size:18px;text-align:left;cursor:pointer;animation:wbpulse 2s ease-in-out infinite}
 .waitbar small{font-weight:700;font-size:14px;color:var(--muted)}
@@ -257,7 +258,7 @@ button:focus{transform:scale(1.04);z-index:2;position:relative}
 @media (max-width:600px){.arow{grid-template-columns:1fr auto}.arow .abar{grid-column:1/-1;order:3}}
 
 /* Play scene: the three characters run, walk, jump and play-fight on a blocky baseplate. */
-.stagewrap{padding-bottom:0;margin-bottom:-6px}.stagewrap:not([hidden]) .stage{margin-bottom:6px}
+.stagewrap[hidden]{display:none}.stagewrap{padding-bottom:0;margin-bottom:-6px}.stagewrap:not([hidden]) .stage{margin-bottom:6px}
 .stage{position:relative;height:clamp(150px,19vw,180px);border:3px solid var(--edge,#1d2433);border-radius:var(--r);overflow:hidden;background:linear-gradient(#8fd0ff,#dff3ff 70%);box-shadow:0 5px 0 var(--edge,#1d2433)}
 .stage .cloud{position:absolute;height:18px;width:64px;background:#fff;border-radius:4px;box-shadow:18px -10px 0 #fff,40px 0 0 #fff;opacity:.9;animation:cloud 40s linear infinite}
 @keyframes cloud{from{transform:translateX(-120px)}to{transform:translateX(110vw)}}
@@ -296,6 +297,7 @@ button:focus{transform:scale(1.04);z-index:2;position:relative}
 
 <div class="wrap stagewrap" id="stageHost" hidden></div>
 <div class="wrap" id="app"></div>
+<div id="saveDock" hidden></div>
 
 <script>
 (function(){
@@ -459,7 +461,7 @@ function saveAll(){
   for(const [id,doc] of Object.entries(cache)) writeDoc("days/"+id,doc);
   subscribe();showToast("💾 Saved. All devices are up to date.");sfx("good");
 }
-const saveBar=()=>db?`<button class="savebtn" data-save="1"><span>💾 Save and sync now</span><small class="savestat">${lastSaved?"Saved to the server at "+hm(lastSaved):"Connected to the server"}</small></button>`:"";
+const saveBar=()=>db?`<button class="savebtn" data-save="1"><span>💾 Save</span><small class="savestat">${lastSaved?"Saved to the server at "+hm(lastSaved):"Connected to the server"}</small></button>`:"";
 function writeDoc(path,data){
   lsSet(path,data);
   if(!db) return;
@@ -643,7 +645,6 @@ function homeHTML(){
       ${isToday()?`<div class="stat"><span>🎮 Roblox left</span><b data-left="${k.id}">${fmt(limitMs()-playedMs(d))}</b></div>`:`<div class="stat"><span>🎮 Roblox played</span><b>${mins(playedMs(d))} min</b></div>`}
       ${pr?`<div class="prize">🎁 ${pr.prizeGiven?"40 Robux given ✓":"40 Robux today!"}</div>`:""}
     </button>`}).join("")}</div>
-  ${saveBar()}
   ${awardsHTML()}
   <div class="foot"><span>${db?"Saved for all your devices":"Saved on this device only"}</span><span style="display:flex;gap:10px">${muteBtn()}<button class="small-btn" data-go="review">✅ Check${allPending().length?` <b class="badge">${allPending().length}</b>`:""}</button><button class="small-btn" data-go="progress">📈 Progress</button><button class="small-btn" data-go="parent">👨 Parent</button></span></div>`;
 }
@@ -1003,6 +1004,8 @@ render=function(){
   _render();lastScreen=view.screen+"|"+view.kid;animateNums();
   const host=document.getElementById("stageHost");
   if(host){if(!stageEl.parentNode) host.appendChild(stageEl);host.hidden=view.screen!=="home"}
+  const dock=document.getElementById("saveDock");
+  if(dock){if(db&&!dock.firstChild) dock.innerHTML=saveBar();dock.hidden=!db}
   const nl=focusables();
   if(same&&i>=0&&nl[i]) nl[i].focus();
   else if(!same&&nl[0]&&!(document.activeElement&&document.activeElement.tagName==="INPUT")) nl[view.screen==="kid"?1:0]?.focus();

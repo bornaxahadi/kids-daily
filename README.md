@@ -29,6 +29,7 @@ A simple daily points app for Diyar, Dayan and Dilan. It is a single `index.html
   - **❌ Deny**: removes it, no points.
   - **Change…**: swap it to the right activity; those points count (no trust point).
   - **Confirm all** approves everything waiting for one kid.
+- **😴 Bedtime** (Parent): each morning, mark last night as slept before 12 (+5) or after 12 (−3). The kids can tap 🪥 brushed teeth and 🌙 ready for bed themselves.
 - **🌟 Bonus points** (Parent): give +1, +2, +3 or +5 for extra-good things, with an optional reason. They count right away.
 - **Fix mistakes** (Parent): change or remove any entry, on any day, with the PIN.
 - Kids also earn levels (🌱 Seedling up to 👑 Legend) from confirmed points, and a 🔥 streak for days in a row at the target.

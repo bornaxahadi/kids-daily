@@ -136,6 +136,10 @@ h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
 .party p{font-size:22px;font-weight:800;margin:0}
 .party button{background:var(--good);color:#fff;border-radius:16px;padding:16px;font-family:var(--display);font-size:26px;font-weight:700}
 .awards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.waitbar{display:flex;align-items:center;gap:14px;width:100%;margin:0 0 14px;padding:14px 18px;border:3px solid var(--gold);border-radius:var(--r);background:var(--gold-soft);color:var(--ink);font:inherit;font-weight:800;font-size:18px;text-align:left;cursor:pointer;animation:wbpulse 2s ease-in-out infinite}
+.waitbar small{font-weight:700;font-size:14px;color:var(--muted)}
+.wb-n{min-width:44px;height:44px;border-radius:50%;background:var(--bad);color:#fff;display:grid;place-items:center;font-size:22px}
+@keyframes wbpulse{50%{box-shadow:0 0 0 6px rgba(242,165,22,.25)}}
 .award{background:var(--gold-soft);border-radius:var(--r);padding:16px 18px;display:flex;align-items:center;gap:14px}
 .award .medal{font-size:46px;line-height:1}
 .award h3{font-size:22px}
@@ -271,8 +275,12 @@ const GOOD=[
   {id:"outside",e:"🌳",l:"Played outside",p:2},
   {id:"slippers",e:"🩴",l:"Wore slippers all day",p:1,once:1},
   {id:"no_fight",e:"🕊️",l:"No fighting today",p:2,once:1},
-  {id:"no_cry",e:"😊",l:"No crying today",p:1,once:1}];
+  {id:"no_cry",e:"😊",l:"No crying today",p:1,once:1},
+  {id:"teeth",e:"🪥",l:"Brushed teeth at bedtime",p:1,once:1},
+  {id:"bed_ready",e:"🌙",l:"Ready for bed (room and pajamas)",p:1,once:1},
+  {id:"slept_early",e:"😴",l:"Slept before 12 at night",p:5,once:1,parent:1}];
 const BAD=[
+  {id:"slept_late",e:"🌙",l:"Slept after 12",p:-3,once:1,parent:1},
   {id:"fight",e:"😠",l:"Fighting",p:-3},
   {id:"cry",e:"😭",l:"Crying",p:-1},
   {id:"mess",e:"🥤",l:"Left a mess",p:-2},
@@ -486,7 +494,7 @@ let lastAdd=null;
 function addAct(kid,act){
   const day=structuredClone(getDay(kid,viewDate));
   const before=projected(day);
-  const entry={id:Math.random().toString(36).slice(2,9),t:Date.now(),a:act.id,e:act.e,l:act.l,p:act.p,s:isToday()?"p":"ok"};
+  const entry={id:Math.random().toString(36).slice(2,9),t:Date.now(),a:act.id,e:act.e,l:act.l,p:act.p,s:isToday()&&!act.parent?"p":"ok"};
   day.log.unshift(entry);saveDay(day);
   lastAdd={kid,id:entry.id};
   celebrate(act.p);sfx(act.p>0?"good":"bad");
@@ -503,6 +511,16 @@ function removeEntry(kid,id,date=viewDate){
 function mutateEntry(kid,date,id,fn){
   const day=structuredClone(getDay(kid,date));const e=day.log.find(x=>x.id===id);if(!e) return;
   fn(day,e);saveDay(day);
+}
+function addNight(kid,actId){
+  const act=ALL.find(x=>x.id===actId),date=yesterday();
+  if(date<START_DATE){showToast("Bedtime points start from tomorrow morning");return}
+  const day=structuredClone(getDay(kid,date));
+  if(day.log.some(x=>x.a===act.id)){showToast("Already added for last night");return}
+  day.log=day.log.filter(x=>!(x.a==="slept_early"||x.a==="slept_late")||x.a===act.id);
+  day.log.unshift({id:Math.random().toString(36).slice(2,9),t:Date.now(),a:act.id,e:act.e,l:act.l,p:act.p,s:"ok",tr:0});
+  sfx(act.p>0?"fanfare":"bad");if(act.p>0)celebrate(act.p);saveDay(day);
+  showToast((act.p>0?"+":"")+act.p+" "+act.l+" · "+kidById(kid).name);
 }
 function giveBonus(kid,n){
   const why=(document.getElementById("bonusWhy")?.value||"").trim();bonusWhy="";
@@ -562,6 +580,7 @@ function homeHTML(){
   return `<div class="top"><div>${logoHTML()}</div>
     ${isSpecial()?`<span class="pill special">🎉 Special day: ${settings.specialMin/60} hours Roblox</span>`:""}</div>
   ${dateBar()}
+  ${allPending().length?`<button class="waitbar" data-go="review"><span class="wb-n">${allPending().length}</span><span>⏳ waiting for Dad's OK<br><small>Dad: tap here, type the PIN, then press ✅</small></span></button>`:""}
   <div class="kids">${KIDS.map(k=>{
     const d=getDay(k.id,viewDate),pts=points(d),pct=Math.max(0,Math.min(100,pts/settings.target*100));
     const pr=earnedPrize(k.id);
@@ -598,6 +617,7 @@ const AREAS=[
   {id:"behave",e:"😇",n:"Behavior",acts:["listened","no_fight","no_cry","fight","cry","not_listen"]},
   {id:"active",e:"🌳",n:"Outside & slippers",acts:["outside","slippers","no_slippers"]},
   {id:"screen",e:"📺",n:"Screen time",acts:["cartoons","roblox_over"]},
+  {id:"sleep",e:"😴",n:"Bedtime",acts:["teeth","bed_ready","slept_early","slept_late"]},
   {id:"bonus",e:"🌟",n:"Bonus",acts:["bonus"]}];
 const areaOf=aid=>AREAS.find(a=>a.acts.includes(aid));
 function areaStats(kid,days){
@@ -660,7 +680,7 @@ function progressHTML(){
         <span class="tot">${tot} pts · 🎯 ${hit} day${hit===1?"":"s"}</span></div>${trendSVG(k.id,days,k.color)}<h4 class="sub">Where ${k.name} is strong or weak ${range==="week"?"(last 7 days)":"(last 30 days)"}</h4>${areaHTML(k,days,prevDays,label)}</div>`}).join("")}
     <div class="hint">Green line = going up. Red line = going down. Gold dot = target reached that day.</div>`;
 }
-function tileHTML(a,kind,day){const done=a.once&&day.log.some(x=>x.a===a.id);const lock=!isToday()&&!parentOn();return `<button class="tile ${kind}${done||lock?" done":""}" data-act="${a.id}" ${done||lock?"disabled":""}><span class="e">${a.e}</span><span>${esc(a.l)}</span><span class="p">${done?"Done ✓":(a.p>0?"+":"")+a.p}</span></button>`}
+function tileHTML(a,kind,day){const done=a.once&&day.log.some(x=>x.a===a.id);const lock=(!isToday()&&!parentOn())||(a.parent&&!parentOn());return `<button class="tile ${kind}${done||lock?" done":""}" data-act="${a.id}" ${done||lock?"disabled":""}><span class="e">${a.e}</span><span>${esc(a.l)}</span><span class="p">${done?"Done ✓":a.parent&&!parentOn()?"Dad adds":(a.p>0?"+":"")+a.p}</span></button>`}
 function kidHTML(k){
   const d=getDay(k.id,viewDate),conf=points(d),pts=projected(d),t=settings.target,pct=Math.max(0,Math.min(100,conf/t*100)),ppct=Math.max(0,Math.min(100,pts/t*100));
   const wait=pendingList(d).length;
@@ -736,6 +756,10 @@ function parentHTML(){
       <div class="field"><span>Reason (optional)</span><input class="prize-in" id="bonusWhy" maxlength="60" placeholder="e.g. Helped grandma" value="${esc(bonusWhy)}"></div>
       ${KIDS.map(k=>`<div class="field"><span style="color:${k.color}">${k.icon} ${k.name}: ${points(getDay(k.id,viewDate))} pts ${isToday()?"today":"that day"}</span><div class="stepper">${[1,2,3,5].map(n=>`<button data-bonus="${k.id}|${n}" style="width:auto;padding:0 14px;font-size:20px">+${n}</button>`).join("")}</div></div>`).join("")}
       <div class="hint">Bonus points count right away, no confirm needed. They go on the day shown (use ◀ ▶ on the home screen to pick a day).</div>
+    </div>
+    <div class="parent"><h3>😴 Last night's bedtime</h3>
+      ${KIDS.map(k=>{const y=getDay(k.id,yesterday()),e=y.log.find(x=>x.a==="slept_early"||x.a==="slept_late");return `<div class="field"><span style="color:${k.color}">${k.icon} ${k.name}${e?` · ${e.e} ${esc(e.l)} (${e.p>0?"+":""}${e.p})`:""}</span><div class="stepper"><button data-night="${k.id}|slept_early" style="width:auto;padding:0 12px;font-size:18px">😴 Before 12 +5</button><button data-night="${k.id}|slept_late" style="width:auto;padding:0 12px;font-size:18px">🌙 After 12 −3</button></div></div>`}).join("")}
+      <div class="hint">Press in the morning. The points go on the day they went to bed (yesterday). Pressing the other button switches last night's answer. Wake-up time does not matter.</div>
     </div>
     <div class="parent"><h3>🏅 Weekly and monthly prizes</h3>
       <div class="field"><span>Girl of the Week prize (AED)</span><div class="stepper"><button data-step="weekAed:-10">−</button><span>${settings.weekAed}</span><button data-step="weekAed:10">+</button></div></div>
@@ -816,11 +840,12 @@ document.addEventListener("click",e=>{
   if(b.dataset.deny){denyEntry(...b.dataset.deny.split("|"));return}
   if(b.dataset.confirmall){confirmAll(b.dataset.confirmall);return}
   if(b.dataset.day){viewDate=b.dataset.day==="today"?today():(()=>{const d=new Date(viewDate+"T12:00:00");d.setDate(d.getDate()+Number(b.dataset.day));const n=dkey(d);return n>today()?today():n<START_DATE?viewDate:n})();render();return}
+  if(b.dataset.night){const[k,a]=b.dataset.night.split("|");addNight(k,a);return}
   if(b.dataset.bonus){const[k,n]=b.dataset.bonus.split("|");giveBonus(k,Number(n));return}
   if(b.dataset.range){range=b.dataset.range;render();return}
   if(b.dataset.kid){view={screen:"kid",kid:b.dataset.kid};render();scrollTo(0,0);return}
   if(b.dataset.go){view={screen:b.dataset.go,kid:null};pinTry="";render();scrollTo(0,0);return}
-  if(b.dataset.act){const a=ALL.find(x=>x.id===b.dataset.act);if(a.once&&getDay(view.kid,viewDate).log.some(x=>x.a===a.id)) return;if(!isToday()&&!parentOn()) return;addAct(view.kid,a);const nb=document.querySelector(`[data-act="${a.id}"]`);nb&&nb.classList.add("pop");return}
+  if(b.dataset.act){const a=ALL.find(x=>x.id===b.dataset.act);if(a.once&&getDay(view.kid,viewDate).log.some(x=>x.a===a.id)) return;if(!isToday()&&!parentOn()) return;if(a.parent&&!parentOn()) return;addAct(view.kid,a);const nb=document.querySelector(`[data-act="${a.id}"]`);nb&&nb.classList.add("pop");return}
   if(b.dataset.del){removeEntry(view.kid,b.dataset.del);return}
   if(b.id==="goBtn"){const d=getDay(view.kid,today());d.runStart?stopPlay(view.kid):startPlay(view.kid);return}
   if(b.id==="pinOk"){const v=$("#pinIn").value;if(pinOk(v)){parentUntil=Date.now()+600000;pinTry="";render()}else{$("#pinMsg").textContent="Wrong PIN. Try again.";$("#pinIn").value=""}return}
@@ -882,9 +907,23 @@ render=function(){
   if(same&&i>=0&&nl[i]) nl[i].focus();
   else if(!same&&nl[0]&&!(document.activeElement&&document.activeElement.tagName==="INPUT")) nl[view.screen==="kid"?1:0]?.focus();
 };
+/* Shared database (Firebase Firestore). Config is filled in after the project is created; null = old behaviour. */
+const FIREBASE_CONFIG=null;
+const loadScript=src=>new Promise((ok,no)=>{const s=document.createElement("script");s.src=src;s.onload=ok;s.onerror=()=>no(new Error("load "+src));document.head.appendChild(s)});
+async function openFirebase(cfg){
+  const base="https://www.gstatic.com/firebasejs/10.12.2/";
+  await loadScript(base+"firebase-app-compat.js");
+  await Promise.all([loadScript(base+"firebase-firestore-compat.js"),loadScript(base+"firebase-auth-compat.js")]);
+  firebase.initializeApp(cfg);
+  await firebase.auth().signInAnonymously();
+  return firebase.firestore();
+}
 loadLocal();render();
 (async()=>{
   try{
+    if(FIREBASE_CONFIG){ // shared online database: every device sees the same points
+      try{db=await openFirebase(FIREBASE_CONFIG);subscribe();render();return}catch(err){console.warn(err);db=null;showToast("No internet: saving on this device only")}
+    }
     if(window.claude&&window.claude.use){db=await window.claude.use("db");if(db){subscribe();render()}}
   }catch(err){db=null}
 })();

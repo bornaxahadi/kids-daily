@@ -12,7 +12,9 @@ A simple daily points app for Diyar, Dayan and Dilan. It is a single `index.html
 - Every tap waits for Dad to check it (⏳). Points only count after Dad confirms.
 - Reach the daily target (12 points by default) to win 40 Robux the next morning.
 - Use the **Roblox time** panel: tap **Start playing** when you begin and **Stop playing** when you finish. The timer counts your daily limit (2 hours normally, 3 hours on special days). Going over the limit costs points.
-- **Progress** shows week and month charts plus Star of the Week and Star of the Month.
+- The date and weekday are shown big at the top. Use ◀ ▶ to look back at earlier days.
+- When points change, the score counts up (green ▲) or down (red ▼).
+- **Girl of the Week:** most points Monday to Sunday wins 50 AED. On a tie, the tied kids split it. **Progress** shows week and month charts.
 
 ## Look, sounds and TV
 
@@ -27,6 +29,8 @@ A simple daily points app for Diyar, Dayan and Dilan. It is a single `index.html
   - **❌ Deny**: removes it, no points.
   - **Change…**: swap it to the right activity; those points count (no trust point).
   - **Confirm all** approves everything waiting for one kid.
+- **🌟 Bonus points** (Parent): give +1, +2, +3 or +5 for extra-good things, with an optional reason. They count right away.
+- **Fix mistakes** (Parent): change or remove any entry, on any day, with the PIN.
 - Kids also earn levels (🌱 Seedling up to 👑 Legend) from confirmed points, and a 🔥 streak for days in a row at the target.
 
 - Tap **Parent** and enter the PIN. **The default PIN is `1234` — change it right away** in the PIN section.

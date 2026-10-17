@@ -152,6 +152,7 @@ h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
 .chip.w{background:var(--gold-soft);color:var(--ink)}
 .chip.t{background:var(--gold-soft);color:var(--ink)}
 .badge{background:var(--bad);color:#fff;border-radius:999px;padding:1px 8px;font-size:14px}
+.log-item{flex-wrap:wrap}
 .log-item.rv{flex-wrap:wrap}
 .log-item .ok{background:var(--good-soft);color:var(--good);border-radius:10px;padding:8px 14px;font-weight:800;font-size:18px}
 .chg{font:inherit;font-weight:700;padding:8px;border-radius:10px;border:2px solid var(--line);background:var(--surface);color:var(--ink);max-width:100%}
@@ -215,6 +216,26 @@ button:focus{transform:scale(1.04);z-index:2;position:relative}
 @media (min-width:1300px){.wrap{max-width:1500px}body{zoom:1.15}}
 @media (min-width:1900px){body{zoom:1.35}}
 @media (orientation:landscape) and (min-width:900px){.score{display:grid;grid-template-columns:auto 1fr;column-gap:28px;align-items:center}.score>*{grid-column:2}.score .big{grid-column:1;grid-row:1/span 6}}
+.datebar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--surface);border:3px solid var(--edge);border-radius:var(--r);padding:12px 16px;box-shadow:0 6px 0 var(--edge)}
+.datebar .dt{flex:1;min-width:200px;text-align:center}
+.datebar .wd{font-family:var(--display);font-size:clamp(34px,6vw,56px);line-height:1}
+.datebar .dm{font-weight:800;font-size:clamp(18px,3vw,26px);color:var(--muted)}
+.datebar .rel{display:inline-block;margin-top:4px;padding:2px 12px;border-radius:8px;border:2px solid var(--edge);background:var(--gold-soft);font-weight:800}
+.datebar .rel.now{background:var(--good-soft);color:var(--good)}
+.dnav{width:72px;height:72px;border:3px solid var(--edge);border-radius:12px;background:var(--bg);font-size:30px;font-weight:800;box-shadow:0 5px 0 var(--edge)}
+.dnav:disabled{opacity:.3;box-shadow:none;cursor:not-allowed}
+.dnav:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 var(--edge)}
+.meter{position:relative}
+.meter i{position:absolute;left:0;top:0}
+.meter i.pend{opacity:.35}
+.num{display:inline-block;font-variant-numeric:tabular-nums;min-width:1ch}
+.num.up{color:var(--good);animation:numup .9s ease-out}
+.num.down{color:var(--bad);animation:numdown .9s ease-out}
+@keyframes numup{0%{transform:scale(1)}30%{transform:scale(1.35) translateY(-6px)}100%{transform:scale(1)}}
+@keyframes numdown{0%{transform:scale(1)}20%{transform:translateX(-8px) scale(1.15)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}100%{transform:translateX(0) scale(1)}}
+.delta{margin-left:12px;padding:2px 12px;border-radius:8px;border:2px solid var(--edge);font-family:var(--display);font-size:26px;vertical-align:middle;animation:dl 1.8s ease-out forwards}
+.delta.g{background:var(--good-soft);color:var(--good)}.delta.b{background:var(--bad-soft);color:var(--bad)}
+@keyframes dl{0%{opacity:0;transform:translateY(8px)}15%{opacity:1;transform:translateY(0)}80%{opacity:1}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -250,7 +271,7 @@ const BAD=[
   {id:"cartoons",e:"📺",l:"Too much mobile / YouTube / cartoons",p:-3},
   {id:"roblox_over",e:"🎮",l:"Went over Roblox time",p:-3}];
 const ALL=[...GOOD,...BAD];
-const DEFAULTS={target:12,chunkMin:60,normalMin:120,specialMin:180,specialDays:{},pin:"1234",weekPrize:"Special prize 🎁",monthPrize:"Big special prize 🎁"};
+const DEFAULTS={target:12,chunkMin:60,normalMin:120,specialMin:180,specialDays:{},pin:"1234",weekAed:50,monthPrize:"Big special prize 🎁"};
 
 // ---- sound (synthesized game blips, no files) ----
 let muted=false;try{muted=localStorage.getItem("kd:muted")==="1"}catch(e){}
@@ -437,16 +458,16 @@ function trendSVG(kid,days,color){
 // ---- actions ----
 let lastAdd=null;
 function addAct(kid,act){
-  const day=structuredClone(getDay(kid,today()));
+  const day=structuredClone(getDay(kid,viewDate));
   const before=projected(day);
-  const entry={id:Math.random().toString(36).slice(2,9),t:Date.now(),a:act.id,e:act.e,l:act.l,p:act.p,s:"p"};
+  const entry={id:Math.random().toString(36).slice(2,9),t:Date.now(),a:act.id,e:act.e,l:act.l,p:act.p,s:isToday()?"p":"ok"};
   day.log.unshift(entry);saveDay(day);
   lastAdd={kid,id:entry.id};
   celebrate(act.p);sfx(act.p>0?"good":"bad");
   if(before<settings.target&&projected(day)>=settings.target) party(kidById(kid).name);
   showToast((act.p>0?"+":"")+act.p+"  "+act.l,true);
 }
-function removeEntry(kid,id,date=today()){
+function removeEntry(kid,id,date=viewDate){
   const day=structuredClone(getDay(kid,date));
   const e=day.log.find(x=>x.id===id);
   day.log=day.log.filter(x=>x.id!==id);
@@ -456,6 +477,12 @@ function removeEntry(kid,id,date=today()){
 function mutateEntry(kid,date,id,fn){
   const day=structuredClone(getDay(kid,date));const e=day.log.find(x=>x.id===id);if(!e) return;
   fn(day,e);saveDay(day);
+}
+function giveBonus(kid,n){
+  const why=(document.getElementById("bonusWhy")?.value||"").trim();bonusWhy="";
+  const day=structuredClone(getDay(kid,viewDate));
+  day.log.unshift({id:Math.random().toString(36).slice(2,9),t:Date.now(),a:"bonus",e:"🌟",l:"Bonus from Dad"+(why?": "+why:""),p:n,s:"ok",tr:0});
+  sfx("fanfare");celebrate(n);saveDay(day);showToast("+"+n+" bonus for "+kidById(kid).name);
 }
 const confirmEntry=(k,d,i)=>{sfx("confirm");mutateEntry(k,d,i,(day,e)=>{e.s="ok";e.tr=1})};
 const denyEntry=(k,d,i)=>{sfx("deny");mutateEntry(k,d,i,(day,e)=>{day.log=day.log.filter(x=>x.id!==i)})};
@@ -506,10 +533,11 @@ function render(){
   tick();
 }
 function homeHTML(){
-  return `<div class="top"><div>${logoHTML()}<div class="date">${esc(niceDate())}</div></div>
+  return `<div class="top"><div>${logoHTML()}</div>
     ${isSpecial()?`<span class="pill special">🎉 Special day: ${settings.specialMin/60} hours Roblox</span>`:""}</div>
+  ${dateBar()}
   <div class="kids">${KIDS.map(k=>{
-    const d=getDay(k.id,today()),pts=points(d),pct=Math.max(0,Math.min(100,pts/settings.target*100));
+    const d=getDay(k.id,viewDate),pts=points(d),pct=Math.max(0,Math.min(100,pts/settings.target*100));
     const pr=earnedPrize(k.id);
     return `<button class="kid-card" style="--kc:${k.color}" data-kid="${k.id}">
       <div class="row"><div class="face">${avatar(k,0.8)}</div><h2>${k.name}</h2></div>
@@ -518,20 +546,36 @@ function homeHTML(){
       ${chips(d)}
       ${gameHTML(k.id)}
       <div class="stat"><span>💛 Trust</span><b>${trust(k.id)}</b></div>
-      <div class="stat"><span>🎮 Roblox left</span><b data-left="${k.id}">${fmt(limitMs()-playedMs(d))}</b></div>
+      ${isToday()?`<div class="stat"><span>🎮 Roblox left</span><b data-left="${k.id}">${fmt(limitMs()-playedMs(d))}</b></div>`:`<div class="stat"><span>🎮 Roblox played</span><b>${mins(playedMs(d))} min</b></div>`}
       ${pr?`<div class="prize">🎁 ${pr.prizeGiven?"40 Robux given ✓":"40 Robux today!"}</div>`:""}
     </button>`}).join("")}</div>
   ${awardsHTML()}
   <div class="foot"><span>${db?"Saved for all your devices":"Saved on this device only"}</span><span style="display:flex;gap:10px">${muteBtn()}<button class="small-btn" data-go="review">✅ Check${allPending().length?` <b class="badge">${allPending().length}</b>`:""}</button><button class="small-btn" data-go="progress">📈 Progress</button><button class="small-btn" data-go="parent">👨 Parent</button></span></div>`;
 }
+const aed=n=>{const r=Math.round(n*100)/100;return (Number.isInteger(r)?r:r.toFixed(2))+" AED"};
+const prevWeekDays=()=>{const d=new Date(weekStart()+"T12:00:00");d.setDate(d.getDate()-7);const out=[];for(let i=0;i<7;i++){out.push(dkey(d));d.setDate(d.getDate()+1)}return out};
 function awardsHTML(){
-  const one=(title,medal,days,prize,sub)=>{const w=starOf(days);
-    return `<div class="award"><div class="medal">${medal}</div><div><h3>${title}</h3>
-      <div class="who">${w?w.map(x=>`<span style="color:${x.k.color}">${x.k.name}</span>`).join(" & ")+` · ${w[0].t} pts`:"Nobody yet"}</div>
-      <div class="hint">${esc(prize)} · ${sub}</div></div></div>`};
-  return `<div class="awards">${one("Star of the Week","🏅",rangeDays(weekStart()),settings.weekPrize,"week so far")}${one("Star of the Month","🏆",rangeDays(monthStart()),settings.monthPrize,new Date().toLocaleDateString("en-GB",{month:"long"}))}</div>`;
+  const names=w=>w.map(x=>`<span style="color:${x.k.color}">${x.k.name}</span>`).join(" & ");
+  const weekCard=(title,days,sub)=>{const w=starOf(days);
+    const prize=w?(w.length>1?`${aed(settings.weekAed)} split: ${aed(settings.weekAed/w.length)} each`:`${aed(settings.weekAed)} prize`):`${aed(settings.weekAed)} prize`;
+    return `<div class="award"><div class="medal">👧</div><div><h3>${title}</h3>
+      <div class="who">${w?names(w)+` · ${w[0].t} pts`:"Nobody yet"}</div>
+      <div class="hint">${prize} · ${sub}</div></div></div>`};
+  const month=(()=>{const w=starOf(rangeDays(monthStart()));return `<div class="award"><div class="medal">🏆</div><div><h3>Girl of the Month</h3>
+      <div class="who">${w?names(w)+` · ${w[0].t} pts`:"Nobody yet"}</div>
+      <div class="hint">${esc(settings.monthPrize)} · ${new Date().toLocaleDateString("en-GB",{month:"long"})}</div></div></div>`})();
+  return `<div class="awards">${weekCard("Girl of the Week",rangeDays(weekStart()),"this week so far")}${weekCard("Last week's winner",prevWeekDays(),"Monday to Sunday")}${month}</div>`;
 }
-let range="week";
+let range="week";let bonusWhy="";
+let viewDate=today();
+const isToday=()=>viewDate===today();
+const longDate=ds=>{const d=new Date(ds+"T12:00:00");return {wd:d.toLocaleDateString("en-GB",{weekday:"long"}),dm:d.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"})}};
+const relLabel=ds=>ds===today()?"Today":ds===yesterday()?"Yesterday":"";
+function dateBar(){const l=longDate(viewDate);
+  return `<div class="datebar"><button class="dnav" data-day="-1" aria-label="Previous day" ${viewDate<=daysAgo(40)?"disabled":""}>◀</button>
+    <div class="dt"><div class="wd">${l.wd}</div><div class="dm">${l.dm}</div>${relLabel(viewDate)?`<div class="rel ${isToday()?"now":""}">${relLabel(viewDate)}</div>`:""}</div>
+    <button class="dnav" data-day="1" aria-label="Next day" ${isToday()?"disabled":""}>▶</button>
+    ${isToday()?"":`<button class="small-btn" data-day="today">Back to today</button>`}</div>`}
 function progressHTML(){
   const days=range==="week"?rangeDays(daysAgo(6)):rangeDays(daysAgo(29));
   return `<div class="kid-head"><button class="back" data-go="home" aria-label="Back">←</button><h1>Progress 📈</h1></div>
@@ -542,22 +586,25 @@ function progressHTML(){
         <span class="tot">${tot} pts · 🎯 ${hit} day${hit===1?"":"s"}</span></div>${trendSVG(k.id,days,k.color)}</div>`}).join("")}
     <div class="hint">Green line = going up. Red line = going down. Gold dot = target reached that day.</div>`;
 }
-function tileHTML(a,kind,day){const done=a.once&&day.log.some(x=>x.a===a.id);return `<button class="tile ${kind}${done?" done":""}" data-act="${a.id}" ${done?"disabled":""}><span class="e">${a.e}</span><span>${esc(a.l)}</span><span class="p">${done?"Done ✓":(a.p>0?"+":"")+a.p}</span></button>`}
+function tileHTML(a,kind,day){const done=a.once&&day.log.some(x=>x.a===a.id);const lock=!isToday()&&!parentOn();return `<button class="tile ${kind}${done||lock?" done":""}" data-act="${a.id}" ${done||lock?"disabled":""}><span class="e">${a.e}</span><span>${esc(a.l)}</span><span class="p">${done?"Done ✓":(a.p>0?"+":"")+a.p}</span></button>`}
 function kidHTML(k){
-  const d=getDay(k.id,today()),pts=points(d),t=settings.target,pct=Math.max(0,Math.min(100,pts/t*100));
+  const d=getDay(k.id,viewDate),conf=points(d),pts=projected(d),t=settings.target,pct=Math.max(0,Math.min(100,conf/t*100)),ppct=Math.max(0,Math.min(100,pts/t*100));
   const wait=pendingList(d).length;
-  const msg=pts>=t?"🎉 Target reached! 40 Robux tomorrow morning!":(projected(d)>=t?"⏳ Almost! Waiting for Dad to confirm":`${t-pts} more points to win 40 Robux`);
+  const msg=conf>=t?"🎉 Target reached! 40 Robux tomorrow morning!":(pts>=t?"⏳ Almost! Waiting for Dad to confirm":`${t-pts} more points to win 40 Robux`);
   const pr=earnedPrize(k.id);
   return `<div class="kid-head" style="--kc:${k.color}"><button class="back" data-go="home" aria-label="Back">←</button>${avatar(k,1.1)}<h1>${k.name}</h1><span style="margin-left:auto">${muteBtn()}</span>
       ${isSpecial()?`<span class="pill special">🎉 Special day</span>`:""}</div>
-    ${pr&&!pr.prizeGiven?`<div class="prize">🎁 You did it yesterday! Ask for your 40 Robux today.</div>`:""}
+    ${dateBar()}
+    ${!isToday()&&!parentOn()?`<div class="hint">📅 Old day: look only. Dad can fix it with the PIN (Parent button).</div>`:""}
+    ${pr&&!pr.prizeGiven&&isToday()?`<div class="prize">🎁 You did it yesterday! Ask for your 40 Robux today.</div>`:""}
     <div class="score" style="--kc:${k.color}">
-      <div class="big">${pts}<small> / ${t} points</small></div>
-      <div class="stars">${starRow(pts,t)}</div>
+      <div class="big"><span class="num" data-key="${k.id}|${viewDate}" data-n="${pts}">${pts}</span><small> / ${t} points</small></div>
+      <div class="stars">${starRow(conf,t)}</div>
       <div class="pm"><span class="chip t">💛 Trust ${trust(k.id)}</span></div>
       ${gameHTML(k.id)}
       ${chips(d)}
-      <div class="meter"><i style="width:${pct}%"></i></div>
+      <div class="meter"><i class="pend" style="width:${ppct}%"></i><i style="width:${pct}%"></i></div>
+      <div class="hint">✅ ${conf} confirmed${wait?` · ⏳ ${pts-conf>=0?"+":""}${pts-conf} waiting for Dad`:""}</div>
       <div class="msg">${msg}</div>
     </div>
     <div class="cols">
@@ -565,16 +612,16 @@ function kidHTML(k){
       <div class="panel"><h3>😬 Oops things</h3><div class="tiles">${BAD.map(a=>tileHTML(a,"bad",d)).join("")}</div></div>
     </div>
     <div class="cols">
-      <div class="panel roblox"><h3>🎮 Roblox time</h3>
+      ${isToday()?`      <div class="panel roblox"><h3>🎮 Roblox time</h3>
         <div class="clock-row"><div><div class="clock" id="clock">0:00</div><div class="clock-sub" id="clockSub"></div></div>
           <div class="clock-sub" id="leftTxt"></div></div>
         <div class="meter" style="--kc:${k.color}"><i id="playBar" style="width:0%"></i></div>
         <div id="playAlert"></div>
         <button class="go ${d.runStart?"stop":""}" id="goBtn">${d.runStart?"⏹ Stop playing":"▶️ Start playing"}</button>
         <div class="hint">Play in chunks of up to ${settings.chunkMin} minutes. Leftover time does not save for tomorrow.</div>
-      </div>
-      <div class="panel"><h3>📝 Today</h3><div class="log">${d.log.length?d.log.map(e=>`<div class="log-item"><span class="t">${hm(e.t)}</span><span>${e.e}</span><span class="l">${esc(e.l)}</span><span class="p ${e.p>0?"g":"b"}">${e.p>0?"+":""}${e.p}</span><span title="${isOk(e)?"Confirmed":"Waiting for Dad"}">${isOk(e)?"✅":"⏳"}</span>${parentOn()?`<button class="x" data-del="${e.id}">Remove</button>`:""}</div>`).join(""):`<div class="empty">Nothing yet. Tap a good thing when you do it!</div>`}</div>
-        ${d.sessions.length?`<div class="hint">Roblox today: ${d.sessions.map(s=>hm(s.start)+"–"+hm(s.end)).join(", ")}</div>`:""}
+      </div>`:`<div class="panel"><h3>🎮 Roblox time</h3><div class="clock">${mins(playedMs(d))} min</div><div class="clock-sub">played ${isSpecial(viewDate)?"(special day)":""}</div></div>`}
+      <div class="panel"><h3>📝 ${isToday()?"Today":longDate(viewDate).wd}</h3><div class="log">${d.log.length?d.log.map(e=>`<div class="log-item"><span class="t">${hm(e.t)}</span><span>${e.e}</span><span class="l">${esc(e.l)}</span><span class="p ${e.p>0?"g":"b"}">${e.p>0?"+":""}${e.p}</span><span title="${isOk(e)?"Confirmed":"Waiting for Dad"}">${isOk(e)?"✅":"⏳"}</span>${parentOn()?`<select class="chg" data-chg="${k.id}|${viewDate}|${e.id}"><option value="">Change…</option>${ALL.map(a=>`<option value="${a.id}">${a.e} ${esc(a.l)} (${a.p>0?"+":""}${a.p})</option>`).join("")}</select><button class="x" data-del="${e.id}">Remove</button>`:""}</div>`).join(""):`<div class="empty">Nothing yet. Tap a good thing when you do it!</div>`}</div>
+        ${d.sessions.length?`<div class="hint">Roblox: ${d.sessions.map(s=>hm(s.start)+"–"+hm(s.end)).join(", ")}</div>`:""}
       </div>
     </div>`;
 }
@@ -611,9 +658,14 @@ function parentHTML(){
       <div class="field"><span>🎮 Special day limit (min)</span><div class="stepper"><button data-step="specialMin:-15">−</button><span>${settings.specialMin}</span><button data-step="specialMin:15">+</button></div></div>
       <div class="field"><span>⏱️ Longest chunk (min)</span><div class="stepper"><button data-step="chunkMin:-15">−</button><span>${settings.chunkMin}</span><button data-step="chunkMin:15">+</button></div></div>
     </div>
-    <div class="parent"><h3>🏅 Star prizes</h3>
-      <div class="field"><span>Star of the Week prize</span><input class="prize-in" id="weekPrize" maxlength="60" value="${esc(settings.weekPrize)}"></div>
-      <div class="field"><span>Star of the Month prize</span><input class="prize-in" id="monthPrize" maxlength="60" value="${esc(settings.monthPrize)}"></div>
+    <div class="parent"><h3>🌟 Bonus points</h3>
+      <div class="field"><span>Reason (optional)</span><input class="prize-in" id="bonusWhy" maxlength="60" placeholder="e.g. Helped grandma" value="${esc(bonusWhy)}"></div>
+      ${KIDS.map(k=>`<div class="field"><span style="color:${k.color}">${k.icon} ${k.name}: ${points(getDay(k.id,viewDate))} pts ${isToday()?"today":"that day"}</span><div class="stepper">${[1,2,3,5].map(n=>`<button data-bonus="${k.id}|${n}" style="width:auto;padding:0 14px;font-size:20px">+${n}</button>`).join("")}</div></div>`).join("")}
+      <div class="hint">Bonus points count right away, no confirm needed. They go on the day shown (use ◀ ▶ on the home screen to pick a day).</div>
+    </div>
+    <div class="parent"><h3>🏅 Weekly and monthly prizes</h3>
+      <div class="field"><span>Girl of the Week prize (AED)</span><div class="stepper"><button data-step="weekAed:-10">−</button><span>${settings.weekAed}</span><button data-step="weekAed:10">+</button></div></div>
+      <div class="field"><span>Girl of the Month prize</span><input class="prize-in" id="monthPrize" maxlength="60" value="${esc(settings.monthPrize)}"></div>
     </div>
     <div class="parent"><h3>🎁 Prizes from yesterday</h3>
       ${KIDS.map(k=>{const y=cache[dayId(k.id,yesterday())];const p=y?points(y):0;const won=p>=settings.target;
@@ -689,14 +741,16 @@ document.addEventListener("click",e=>{
   if(b.dataset.confirm){confirmEntry(...b.dataset.confirm.split("|"));return}
   if(b.dataset.deny){denyEntry(...b.dataset.deny.split("|"));return}
   if(b.dataset.confirmall){confirmAll(b.dataset.confirmall);return}
+  if(b.dataset.day){viewDate=b.dataset.day==="today"?today():(()=>{const d=new Date(viewDate+"T12:00:00");d.setDate(d.getDate()+Number(b.dataset.day));const n=dkey(d);return n>today()?today():n<daysAgo(40)?viewDate:n})();render();return}
+  if(b.dataset.bonus){const[k,n]=b.dataset.bonus.split("|");giveBonus(k,Number(n));return}
   if(b.dataset.range){range=b.dataset.range;render();return}
   if(b.dataset.kid){view={screen:"kid",kid:b.dataset.kid};render();scrollTo(0,0);return}
   if(b.dataset.go){view={screen:b.dataset.go,kid:null};pinTry="";render();scrollTo(0,0);return}
-  if(b.dataset.act){const a=ALL.find(x=>x.id===b.dataset.act);if(a.once&&getDay(view.kid,today()).log.some(x=>x.a===a.id)) return;addAct(view.kid,a);const nb=document.querySelector(`[data-act="${a.id}"]`);nb&&nb.classList.add("pop");return}
+  if(b.dataset.act){const a=ALL.find(x=>x.id===b.dataset.act);if(a.once&&getDay(view.kid,viewDate).log.some(x=>x.a===a.id)) return;if(!isToday()&&!parentOn()) return;addAct(view.kid,a);const nb=document.querySelector(`[data-act="${a.id}"]`);nb&&nb.classList.add("pop");return}
   if(b.dataset.del){removeEntry(view.kid,b.dataset.del);return}
   if(b.id==="goBtn"){const d=getDay(view.kid,today());d.runStart?stopPlay(view.kid):startPlay(view.kid);return}
   if(b.id==="pinOk"){const v=$("#pinIn").value;if(v===String(settings.pin)){parentUntil=Date.now()+600000;pinTry="";render()}else{$("#pinMsg").textContent="Wrong PIN. Try again.";$("#pinIn").value=""}return}
-  if(b.dataset.step){const[k,s]=b.dataset.step.split(":");const min={target:1,normalMin:15,specialMin:15,chunkMin:15}[k];settings={...settings,[k]:Math.max(min,settings[k]+Number(s))};saveSettings();return}
+  if(b.dataset.step){const[k,s]=b.dataset.step.split(":");const min={target:1,normalMin:15,specialMin:15,chunkMin:15,weekAed:0}[k];settings={...settings,[k]:Math.max(min,settings[k]+Number(s))};saveSettings();return}
   if(b.id==="spBtn"){const sd={...settings.specialDays};const t=today();if(sd[t]) delete sd[t];else sd[t]=true;
     for(const k of Object.keys(sd)) if(k<yesterday()) delete sd[k];settings={...settings,specialDays:sd};saveSettings();return}
   if(b.dataset.prize){const y=structuredClone(getDay(b.dataset.prize,yesterday()));y.prizeGiven=!y.prizeGiven;saveDay(y);return}
@@ -705,8 +759,9 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="pinIn") $("#pinOk").click()});
 document.addEventListener("change",e=>{if(e.target.dataset&&e.target.dataset.chg&&e.target.value){changeEntry(...e.target.dataset.chg.split("|"),e.target.value);return}
-if(e.target.id==="weekPrize"||e.target.id==="monthPrize"){settings={...settings,[e.target.id]:e.target.value.trim()||DEFAULTS[e.target.id]};saveSettings()}});
-document.addEventListener("input",e=>{if(e.target.id==="pinIn") pinTry=e.target.value});
+if(e.target.id==="monthPrize"){settings={...settings,[e.target.id]:e.target.value.trim()||DEFAULTS[e.target.id]};saveSettings()}});
+document.addEventListener("input",e=>{if(e.target.id==="bonusWhy") bonusWhy=e.target.value;
+  if(e.target.id==="pinIn") pinTry=e.target.value});
 
 // ---- TV remote: arrow keys move focus, Enter clicks, Back goes home ----
 const FOC="button:not([disabled]),select,input";
@@ -731,11 +786,24 @@ document.addEventListener("keydown",e=>{
   const back=e.key==="Escape"||e.key==="BrowserBack"||e.key==="GoBack"||e.keyCode===10009||e.keyCode===461||(e.key==="Backspace"&&!typing);
   if(back&&goBack()) e.preventDefault();
 });
+const numCache={};
+function animateNums(){
+  document.querySelectorAll(".num").forEach(el=>{
+    const key=el.dataset.key,n=Number(el.dataset.n),prev=numCache[key];numCache[key]=n;
+    if(prev===undefined||prev===n) return;
+    const up=n>prev,t0=performance.now(),dur=800;
+    el.classList.remove("up","down");void el.offsetWidth;el.classList.add(up?"up":"down");
+    const dl=document.createElement("span");dl.className="delta "+(up?"g":"b");dl.textContent=(up?"▲ +":"▼ −")+Math.abs(n-prev);el.parentNode.insertBefore(dl,el.nextSibling);
+    setTimeout(()=>dl.remove(),1800);setTimeout(()=>el.classList.remove("up","down"),1400);
+    const step=now=>{const f=Math.min(1,(now-t0)/dur);el.textContent=Math.round(prev+(n-prev)*f);if(f<1) requestAnimationFrame(step)};
+    requestAnimationFrame(step);
+  });
+}
 let lastScreen="";
 const _render=render;
 render=function(){
   const list=focusables();const i=list.indexOf(document.activeElement);const same=lastScreen===view.screen+"|"+view.kid;
-  _render();lastScreen=view.screen+"|"+view.kid;
+  _render();lastScreen=view.screen+"|"+view.kid;animateNums();
   const nl=focusables();
   if(same&&i>=0&&nl[i]) nl[i].focus();
   else if(!same&&nl[0]&&!(document.activeElement&&document.activeElement.tagName==="INPUT")) nl[view.screen==="kid"?1:0]?.focus();
